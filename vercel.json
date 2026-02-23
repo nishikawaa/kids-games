@@ -10,6 +10,11 @@
       "source": "/flash-sanzan",
       "destination": "/flash-sanzan/",
       "statusCode": 308
+    },
+    {
+      "source": "/rhythm-touch",
+      "destination": "/rhythm-touch/",
+      "statusCode": 308
     }
   ]
 }
