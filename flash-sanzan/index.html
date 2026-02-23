@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ぴかっとさんすう</title>
+    <script>
+    !function(){
+      var p = location.pathname;
+      var dir = p.slice(-1) === '/' ? p : p.substring(0, p.lastIndexOf('/') + 1);
+      if (p.slice(-1) !== '/' && !/\.\w+$/.test(p)) dir = p + '/';
+      document.write('<link rel="stylesheet" href="' + dir + 'style.css">');
+      window.__assetBase = dir;
+    }();
+    </script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>⚡ ぴかっとさんすう</h1>
+            <div class="game-info">
+                <span id="score">もんだい: 0/5</span>
+                <span id="level">せいかい: 0</span>
+                <span id="time">のこり: --</span>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div id="startScreen" class="center-screen">
+                <p class="start-message">「ゲーム開始」をおして<br>チャレンジしよう！</p>
+            </div>
+
+            <div id="countdownScreen" class="center-screen hidden">
+                <div id="countdownNum" class="countdown-num">3</div>
+            </div>
+
+            <div id="problemScreen" class="center-screen hidden">
+                <div id="problemDisplay" class="problem-display"></div>
+                <div id="timerBar" class="timer-bar">
+                    <div id="timerFill" class="timer-fill"></div>
+                </div>
+                <div id="choicesGrid" class="choices-grid"></div>
+                <div id="feedback" class="feedback hidden"></div>
+            </div>
+
+            <div id="gameOver" class="center-screen hidden">
+                <div class="game-over-box">
+                    <div id="starDisplay" class="star-display"></div>
+                    <p class="result-line">
+                        <strong id="correctCount">0</strong> / <span id="totalCount">5</span> もん せいかい！
+                    </p>
+                    <button id="restartBtn">もういちど！</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn">ゲーム開始</button>
+            <button id="pauseBtn" class="secondary hidden">一時停止</button>
+            <button id="helpBtn" class="secondary">ヘルプ</button>
+            <div class="mode-controls">
+                <select id="modeSelect" aria-label="ゲームモード">
+                    <option value="easy">やさしい（5もん・たしざん）</option>
+                    <option value="normal" selected>ふつう（8もん・たし・ひき）</option>
+                    <option value="challenge">チャレンジ（10もん・はやい）</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="helpTitle">あそびかた</h2>
+                    <button id="helpCloseBtn" class="icon-btn" aria-label="閉じる">×</button>
+                </div>
+                <div class="modal-body">
+                    <h3>操作</h3>
+                    <p>もんだいが出たら、こたえのボタンをタップ（クリック）しよう！</p>
+                    <p>まちがえても大丈夫！最後に⭐でひょうかされるよ。</p>
+
+                    <h3>モード</h3>
+                    <ul>
+                        <li><strong>やさしい</strong>: たしざんだけ。数は1〜5。ぜんぶで5もん（1もん3びょう）。</li>
+                        <li><strong>ふつう</strong>: たしざんとひきざん。数は1〜10。ぜんぶで8もん（1もん2.5びょう）。</li>
+                        <li><strong>チャレンジ</strong>: たしざんとひきざん。数は1〜15。ぜんぶで10もん（1もん2びょう）。</li>
+                    </ul>
+
+                    <h3>⭐ひょうか</h3>
+                    <ul>
+                        <li>⭐⭐⭐ ：ぜんもんせいかい！</li>
+                        <li>⭐⭐ ：はんぶんいじょうせいかい！</li>
+                        <li>⭐ ：よくちょうせんしました！</li>
+                    </ul>
+
+                    <p>モーダルは右上の×か、背景クリック、Escキーで閉じられます。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>document.write('<script src="' + window.__assetBase + 'game.js"><\/script>')</script>
+</body>
+</html>
