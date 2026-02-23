@@ -1,3 +1,10 @@
 {
-  "trailingSlash": true
+  "trailingSlash": true,
+  "redirects": [
+    {
+      "source": "/kao-onigokko",
+      "destination": "/kao-onigokko/",
+      "statusCode": 308
+    }
+  ]
 }

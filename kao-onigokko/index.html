@@ -4,17 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>かおオニごっこ</title>
-    <script>
-    // URLの末尾にスラッシュがない場合、相対パスが正しく解決されるようにbaseタグを設定
-    (function() {
-      var p = location.pathname;
-      if (p.charAt(p.length - 1) !== '/' && p.lastIndexOf('.') < p.lastIndexOf('/')) {
-        var base = document.createElement('base');
-        base.href = p + '/';
-        document.head.appendChild(base);
-      }
-    })();
-    </script>
+    <script>!function(){var p=location.pathname;if(p.slice(-1)!=="/"&&!/\.\w+$/.test(p))document.write('<base href="'+p+'/">')}()</script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
