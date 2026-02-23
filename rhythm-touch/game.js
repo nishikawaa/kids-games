@@ -387,28 +387,27 @@ class RhythmTouch {
         };
 
         // Transition to active after appear animation
-        requestAnimationFrame(function() {
+        requestAnimationFrame(() => {
             if (!el.parentNode || targetObj.hit) return;
             el.classList.remove('appearing');
             el.classList.add('active');
         });
 
         // Handle click/tap
-        var self = this;
-        var handler = function(e) {
+        var handler = (e) => {
             e.preventDefault();
             e.stopPropagation();
             if (targetObj.hit) return;
             targetObj.hit = true;
             clearTimeout(targetObj.timeoutId);
-            self._onTargetClick(targetObj);
+            this._onTargetClick(targetObj);
         };
         el.addEventListener('pointerdown', handler);
 
         // Schedule miss
-        targetObj.timeoutId = setTimeout(function() {
+        targetObj.timeoutId = setTimeout(() => {
             if (!targetObj.hit) {
-                self._onTargetMiss(targetObj);
+                this._onTargetMiss(targetObj);
             }
         }, displayMs);
 
@@ -469,7 +468,7 @@ class RhythmTouch {
     _removeTarget(target) {
         var el = target.el;
         var removalDelay = 400; // matches longest CSS hit/miss animation
-        setTimeout(function() {
+        setTimeout(() => {
             if (el.parentNode) el.parentNode.removeChild(el);
         }, removalDelay);
         var idx = this.activeTargets.indexOf(target);
@@ -518,7 +517,7 @@ class RhythmTouch {
         clearTimeout(this.beatTimerId);
         clearTimeout(this.feedbackTimerId);
         clearInterval(this.countdownTimerId);
-        this.activeTargets.forEach(function(t) {
+        this.activeTargets.forEach((t) => {
             if (t.timeoutId) clearTimeout(t.timeoutId);
         });
         this.beatTimerId      = null;
@@ -529,4 +528,4 @@ class RhythmTouch {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() { new RhythmTouch(); });
+document.addEventListener('DOMContentLoaded', () => { new RhythmTouch(); });
