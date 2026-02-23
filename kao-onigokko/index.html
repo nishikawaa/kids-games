@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>かおオニごっこ</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>かおオニごっこ</h1>
+            <div class="game-info">
+                <span id="score">スコア: 0</span>
+                <span id="level">レベル: 1</span>
+                <span id="time">時間: 0</span>
+            </div>
+        </div>
+        
+        <div class="game-area">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="gameCanvas"></canvas>
+            <div id="gameOver" class="game-over hidden">
+                <h2 id="gameOverTitle">ゲームオーバー!</h2>
+                <p><span id="finalLabel">最終スコア</span>: <span id="finalScore">0</span></p>
+                <button id="restartBtn">最初にもどる</button>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button id="startBtn">ゲーム開始</button>
+            <button id="pauseBtn" class="secondary hidden">一時停止</button>
+            <button id="helpBtn" class="secondary">ヘルプ</button>
+            <div class="camera-controls">
+                <select id="modeSelect" aria-label="ゲームモード">
+                    <option value="easy">やさしい</option>
+                    <option value="normal" selected>ふつう</option>
+                    <option value="challenge">チャレンジ（30秒）</option>
+                </select>
+                <label class="toggle-pill">
+                    <input id="mirrorToggle" type="checkbox">
+                    左右反転
+                </label>
+                <button id="cameraBtn">カメラON/OFF</button>
+                <select id="cameraSelect" aria-label="カメラ選択" disabled>
+                    <option value="">カメラ選択</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="helpTitle">あそびかた</h2>
+                    <button id="helpCloseBtn" class="icon-btn" aria-label="閉じる">×</button>
+                </div>
+                <div class="modal-body">
+                    <h3>操作</h3>
+                    <p>カメラをONにして、顔を左右・上下に動かすとキャラクターが動きます。</p>
+                    <p>赤い玉に当たるとゲームオーバーです。</p>
+
+                    <h3>敵</h3>
+                    <p>赤い玉が上や下から出てきます。ときどき大きい玉も出ます。</p>
+
+                    <h3>アイテム（5秒で消える）</h3>
+                    <ul>
+                        <li><strong>💥（青）</strong>: 画面の敵をぜんぶ消します。</li>
+                        <li><strong>🛡️（紫）</strong>: 5秒間むてき！敵にあたってもだいじょうぶ。</li>
+                        <li><strong>🐢（緑）</strong>: 敵の動きが5秒間ゆっくりになります。</li>
+                        <li><strong>⭐（金）</strong>: スコアが100点アップ！</li>
+                        <li><strong>⚠️（赤）</strong>: 拾うと敵が5秒間スピードアップします（注意）。</li>
+                    </ul>
+
+                    <p>モーダルは右上の×か、背景クリック、Escキーで閉じられます。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_detection"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@1.0.3"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.5"></script>
+    <script src="game.js"></script>
+</body>
+</html>
