@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>キッズゲーム</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', sans-serif;
+            background: #f0f4ff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 2rem 1rem;
+        }
+        h1 {
+            font-size: 2rem;
+            color: #333;
+            margin-bottom: 2rem;
+        }
+        .app-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 800px;
+        }
+        .app-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            text-align: center;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .app-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+        }
+        .app-card .icon {
+            font-size: 3rem;
+            margin-bottom: 0.75rem;
+        }
+        .app-card .name {
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: #333;
+        }
+        .app-card .description {
+            font-size: 0.9rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 キッズゲーム</h1>
+    <div class="app-list">
+        <a class="app-card" href="/kao-onigokko/">
+            <div class="icon">👻</div>
+            <div class="name">かおオニごっこ</div>
+            <div class="description">カメラに映る顔を動かして敵をよけよう！</div>
+        </a>
+    </div>
+</body>
+</html>
