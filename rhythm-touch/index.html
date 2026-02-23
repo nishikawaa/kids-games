@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎵 リズムタッチ</title>
+    <script>
+    !function(){
+      var p = location.pathname;
+      var dir = p.slice(-1) === '/' ? p : p.substring(0, p.lastIndexOf('/') + 1);
+      if (p.slice(-1) !== '/' && !/\.\w+$/.test(p)) dir = p + '/';
+      document.write('<link rel="stylesheet" href="' + dir + 'style.css">');
+      window.__assetBase = dir;
+    }();
+    </script>
+</head>
+<body>
+    <div class="game-container">
+        <div class="header">
+            <h1>🎵 リズムタッチ</h1>
+            <div class="game-info">
+                <span id="score">スコア: 0</span>
+                <span id="combo">コンボ: 0</span>
+                <span id="level">レベル: ふつう</span>
+            </div>
+        </div>
+
+        <div class="game-area">
+            <div id="startScreen" class="center-screen">
+                <p class="start-message">「ゲーム開始」をおして<br>リズムにあわせてタッチしよう！</p>
+            </div>
+
+            <div id="countdownScreen" class="center-screen hidden">
+                <div id="countdownNum" class="countdown-num">3</div>
+            </div>
+
+            <div id="playScreen" class="center-screen hidden">
+                <div id="targetArea" class="target-area"></div>
+                <div id="feedback" class="feedback hidden"></div>
+            </div>
+
+            <div id="gameOver" class="center-screen hidden">
+                <div class="game-over-box">
+                    <div id="starDisplay" class="star-display"></div>
+                    <p class="result-line">
+                        スコア: <strong id="finalScore">0</strong>てん
+                    </p>
+                    <p class="result-line">
+                        さいだいコンボ: <strong id="maxCombo">0</strong>
+                    </p>
+                    <button id="restartBtn">もういちど！</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn">ゲーム開始</button>
+            <button id="pauseBtn" class="secondary hidden">一時停止</button>
+            <button id="helpBtn" class="secondary">ヘルプ</button>
+            <div class="mode-controls">
+                <select id="modeSelect" aria-label="ゲームモード">
+                    <option value="easy">やさしい（ゆっくり・4ビート）</option>
+                    <option value="normal" selected>ふつう（8ビート）</option>
+                    <option value="challenge">チャレンジ（はやい・16ビート）</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="helpModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="helpTitle">あそびかた</h2>
+                    <button id="helpCloseBtn" class="icon-btn" aria-label="閉じる">×</button>
+                </div>
+                <div class="modal-body">
+                    <h3>操作</h3>
+                    <p>おんがくにあわせて、どうぶつが出てくるよ！<br>どうぶつをタップ（クリック）してね！</p>
+                    <p>タイミングがよいと「ぴったり！」、まあまあだと「おしい！」になるよ。</p>
+
+                    <h3>モード</h3>
+                    <ul>
+                        <li><strong>やさしい</strong>: ゆっくりテンポ。おおきいどうぶつ。ぜんぶで12かい。</li>
+                        <li><strong>ふつう</strong>: ふつうのテンポ。ぜんぶで16かい。</li>
+                        <li><strong>チャレンジ</strong>: はやいテンポ！ちいさいどうぶつ。ぜんぶで20かい。</li>
+                    </ul>
+
+                    <h3>⭐ひょうか</h3>
+                    <ul>
+                        <li>⭐⭐⭐ ：90%いじょうのスコア！</li>
+                        <li>⭐⭐ ：60%いじょうのスコア！</li>
+                        <li>⭐ ：よくちょうせんしました！</li>
+                    </ul>
+
+                    <p>モーダルは右上の×か、背景クリック、Escキーで閉じられます。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>document.write('<script src="' + window.__assetBase + 'game.js"><\/script>')</script>
+</body>
+</html>
