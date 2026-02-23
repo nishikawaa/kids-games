@@ -5,6 +5,11 @@
       "source": "/kao-onigokko",
       "destination": "/kao-onigokko/",
       "statusCode": 308
+    },
+    {
+      "source": "/flash-sanzan",
+      "destination": "/flash-sanzan/",
+      "statusCode": 308
     }
   ]
 }
