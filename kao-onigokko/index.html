@@ -4,8 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>かおオニごっこ</title>
-    <script>!function(){var p=location.pathname;if(p.slice(-1)!=="/"&&!/\.\w+$/.test(p))document.write('<base href="'+p+'/">')}()</script>
-    <link rel="stylesheet" href="style.css">
+    <script>
+    // 現在のHTMLがあるディレクトリを算出し、CSSを動的にロード
+    // （プリロードスキャナーが誤ったパスでfetchするのを防止）
+    !function(){
+      var p = location.pathname;
+      var dir = p.slice(-1) === '/' ? p : p.substring(0, p.lastIndexOf('/') + 1);
+      // /kao-onigokko のようにファイル拡張子がないパスはディレクトリとみなす
+      if (p.slice(-1) !== '/' && !/\.\w+$/.test(p)) dir = p + '/';
+      document.write('<link rel="stylesheet" href="' + dir + 'style.css">');
+      window.__assetBase = dir;
+    }();
+    </script>
 </head>
 <body>
     <div class="game-container">
@@ -83,6 +93,6 @@
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-detection@1.0.3"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/face-landmarks-detection@1.0.5"></script>
-    <script src="game.js"></script>
+    <script>document.write('<script src="' + window.__assetBase + 'game.js"><\/script>')</script>
 </body>
 </html>
