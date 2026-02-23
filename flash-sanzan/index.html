@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>フラッシュ算数</title>
+    <title>ぴかっとさんすう</title>
     <script>
     !function(){
       var p = location.pathname;
@@ -17,10 +17,10 @@
 <body>
     <div class="game-container">
         <div class="header">
-            <h1>⚡ フラッシュ算数</h1>
+            <h1>⚡ ぴかっとさんすう</h1>
             <div class="game-info">
-                <span id="score">スコア: 0</span>
-                <span id="level">レベル: 1</span>
+                <span id="score">もんだい: 0/5</span>
+                <span id="level">せいかい: 0</span>
                 <span id="time">のこり: --</span>
             </div>
         </div>
@@ -45,9 +45,10 @@
 
             <div id="gameOver" class="center-screen hidden">
                 <div class="game-over-box">
-                    <h2>⭐ ゲームおわり！</h2>
-                    <p class="result-line">せいかい: <strong id="correctCount">0</strong> もん</p>
-                    <p class="result-line">スコア: <strong id="finalScore">0</strong> てん</p>
+                    <div id="starDisplay" class="star-display"></div>
+                    <p class="result-line">
+                        <strong id="correctCount">0</strong> / <span id="totalCount">5</span> もん せいかい！
+                    </p>
                     <button id="restartBtn">もういちど！</button>
                 </div>
             </div>
@@ -59,9 +60,9 @@
             <button id="helpBtn" class="secondary">ヘルプ</button>
             <div class="mode-controls">
                 <select id="modeSelect" aria-label="ゲームモード">
-                    <option value="easy">やさしい（たしざん）</option>
-                    <option value="normal" selected>ふつう（たし・ひき）</option>
-                    <option value="challenge">チャレンジ（30秒）</option>
+                    <option value="easy">やさしい（5もん・たしざん）</option>
+                    <option value="normal" selected>ふつう（8もん・たし・ひき）</option>
+                    <option value="challenge">チャレンジ（10もん・はやい）</option>
                 </select>
             </div>
         </div>
@@ -75,17 +76,21 @@
                 <div class="modal-body">
                     <h3>操作</h3>
                     <p>もんだいが出たら、こたえのボタンをタップ（クリック）しよう！</p>
-                    <p>せいかいするとスコアがアップ！まちがえると次のもんだいへ。</p>
+                    <p>まちがえても大丈夫！最後に⭐でひょうかされるよ。</p>
 
                     <h3>モード</h3>
                     <ul>
-                        <li><strong>やさしい</strong>: たしざんだけ。数は1〜5。</li>
-                        <li><strong>ふつう</strong>: たしざんとひきざん。数は1〜10。</li>
-                        <li><strong>チャレンジ</strong>: 30秒間にできるだけ多くこたえよう！数は1〜20。</li>
+                        <li><strong>やさしい</strong>: たしざんだけ。数は1〜5。ぜんぶで5もん（1もん3びょう）。</li>
+                        <li><strong>ふつう</strong>: たしざんとひきざん。数は1〜10。ぜんぶで8もん（1もん2.5びょう）。</li>
+                        <li><strong>チャレンジ</strong>: たしざんとひきざん。数は1〜15。ぜんぶで10もん（1もん2びょう）。</li>
                     </ul>
 
-                    <h3>レベルアップ</h3>
-                    <p>正解を重ねるとレベルが上がり、もんだいのむずかしさが増します。</p>
+                    <h3>⭐ひょうか</h3>
+                    <ul>
+                        <li>⭐⭐⭐ ：ぜんもんせいかい！</li>
+                        <li>⭐⭐ ：はんぶんいじょうせいかい！</li>
+                        <li>⭐ ：よくちょうせんしました！</li>
+                    </ul>
 
                     <p>モーダルは右上の×か、背景クリック、Escキーで閉じられます。</p>
                 </div>

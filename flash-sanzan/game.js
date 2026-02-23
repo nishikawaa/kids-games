@@ -24,60 +24,57 @@ class FlashSanzan {
         this.timerFill      = document.getElementById('timerFill');
         this.choicesGrid    = document.getElementById('choicesGrid');
         this.feedbackEl     = document.getElementById('feedback');
+
+        // result screen elements
+        this.starDisplayEl  = document.getElementById('starDisplay');
         this.correctCountEl = document.getElementById('correctCount');
-        this.finalScoreEl   = document.getElementById('finalScore');
+        this.totalCountEl   = document.getElementById('totalCount');
 
         // game state
-        this.score        = 0;
-        this.level        = 1;
-        this.correctCount = 0;
-        this.isRunning    = false;
-        this.isPaused     = false;
-        this.isHelpOpen   = false;
+        this.correctCount  = 0;
+        this.questionIndex = 0;   // 現在の問題番号（0始まり）
+        this.isRunning     = false;
+        this.isPaused      = false;
+        this.isHelpOpen    = false;
         this.wasPausedBeforeHelp = false;
 
         // timing
-        this.gameStartTs  = 0;
-        this.pausedTime   = 0;
-        this.pauseStartTs = 0;
-        this.gameTimerId  = null;
-        this.problemTimerId = null;
+        this.pausedTime      = 0;
+        this.pauseStartTs    = 0;
+        this.problemTimerId  = null;
         this.feedbackTimerId = null;
         this.countdownTimerId = null;
 
-        // modes
+        // modes: totalQuestions × problemTimeSec ≈ 30〜50秒
         this.modeConfigs = {
             easy: {
-                label:         'やさしい',
-                ops:           ['+'],
-                maxNum:        5,
-                timeLimitSec:  0,
-                problemTimeSec: 4,
-                scorePerCorrect: 10
+                label:          'やさしい',
+                ops:            ['+'],
+                maxNum:         5,
+                totalQuestions: 5,
+                problemTimeSec: 3
             },
             normal: {
-                label:         'ふつう',
-                ops:           ['+', '-'],
-                maxNum:        10,
-                timeLimitSec:  0,
-                problemTimeSec: 3,
-                scorePerCorrect: 20
+                label:          'ふつう',
+                ops:            ['+', '-'],
+                maxNum:         10,
+                totalQuestions: 8,
+                problemTimeSec: 2.5
             },
             challenge: {
-                label:         'チャレンジ',
-                ops:           ['+', '-'],
-                maxNum:        20,
-                timeLimitSec:  30,
-                problemTimeSec: 2.5,
-                scorePerCorrect: 30
+                label:          'チャレンジ',
+                ops:            ['+', '-'],
+                maxNum:         15,
+                totalQuestions: 10,
+                problemTimeSec: 2
             }
         };
         this.gameMode = this.modeSelect ? this.modeSelect.value : 'normal';
 
         // current problem
-        this.currentAnswer = 0;
+        this.currentAnswer  = 0;
         this.problemStartTs = 0;
-        this.problemRafId = null;
+        this.problemRafId   = null;
         this.answeredCurrent = false;
 
         this._bindEvents();
@@ -140,13 +137,12 @@ class FlashSanzan {
 
     _resetState() {
         this._clearAllTimers();
-        this.score        = 0;
-        this.level        = 1;
-        this.correctCount = 0;
-        this.isPaused     = false;
-        this.isRunning    = false;
-        this.pausedTime   = 0;
-        this.pauseStartTs = 0;
+        this.correctCount  = 0;
+        this.questionIndex = 0;
+        this.isPaused      = false;
+        this.isRunning     = false;
+        this.pausedTime    = 0;
+        this.pauseStartTs  = 0;
         this._updateHUD();
     }
 
@@ -166,36 +162,13 @@ class FlashSanzan {
     }
 
     _beginGame() {
-        this.isRunning    = true;
-        this.gameStartTs  = performance.now();
-        this.pausedTime   = 0;
+        this.isRunning = true;
+        this.pausedTime = 0;
         this.modeSelect.disabled = true;
         this.startBtn.classList.add('hidden');
         this.pauseBtn.classList.remove('hidden');
         this._showScreen('problem');
-        this._startGameTimer();
         this._nextProblem();
-    }
-
-    _startGameTimer() {
-        const cfg = this._cfg();
-        this.gameTimerId = setInterval(() => {
-            if (this.isPaused) return;
-            const elapsed = this._elapsedSec();
-            if (cfg.timeLimitSec > 0) {
-                const remaining = Math.max(0, cfg.timeLimitSec - elapsed);
-                this.timeEl.textContent = `のこり: ${remaining.toFixed(0)}秒`;
-                if (remaining <= 0) this._endGame();
-            } else {
-                this.timeEl.textContent = `時間: ${elapsed.toFixed(0)}秒`;
-            }
-            this._updateHUD();
-        }, 200);
-    }
-
-    _elapsedSec() {
-        const now = performance.now();
-        return (now - this.gameStartTs - this.pausedTime) / 1000;
     }
 
     _pauseGame() {
@@ -203,7 +176,6 @@ class FlashSanzan {
         this.isPaused = true;
         this.pauseStartTs = performance.now();
         this.pauseBtn.textContent = '再開';
-        // freeze problem timer bar
         if (this.problemRafId) {
             cancelAnimationFrame(this.problemRafId);
             this.problemRafId = null;
@@ -216,7 +188,6 @@ class FlashSanzan {
         if (!this.isRunning || !this.isPaused) return;
         const pauseDuration = performance.now() - this.pauseStartTs;
         this.pausedTime += pauseDuration;
-        // adjust problemStartTs so remaining time is preserved
         this.problemStartTs += pauseDuration;
         this.isPaused = false;
         this.pauseBtn.textContent = '一時停止';
@@ -234,8 +205,20 @@ class FlashSanzan {
         this.startBtn.classList.remove('hidden');
         this.pauseBtn.classList.add('hidden');
         this.pauseBtn.textContent = '一時停止';
+
+        const total = this._cfg().totalQuestions;
+        // ⭐評価
+        let stars;
+        if (this.correctCount === total) {
+            stars = 3;
+        } else if (this.correctCount >= Math.ceil(total / 2)) {
+            stars = 2;
+        } else {
+            stars = 1;
+        }
+        this.starDisplayEl.textContent = '⭐'.repeat(stars);
         this.correctCountEl.textContent = this.correctCount;
-        this.finalScoreEl.textContent   = this.score;
+        this.totalCountEl.textContent   = total;
         this._showScreen('gameover');
     }
 
@@ -243,9 +226,18 @@ class FlashSanzan {
 
     _nextProblem() {
         if (!this.isRunning) return;
+        const cfg = this._cfg();
+
+        // 全問終了チェック
+        if (this.questionIndex >= cfg.totalQuestions) {
+            this._endGame();
+            return;
+        }
+
         this.answeredCurrent = false;
         this.feedbackEl.classList.add('hidden');
         this.feedbackEl.className = 'feedback hidden';
+        this._updateHUD();
 
         const { a, b, op, answer } = this._generateProblem();
         this.currentAnswer = answer;
@@ -270,17 +262,14 @@ class FlashSanzan {
         const cfg = this._cfg();
         const op  = cfg.ops[Math.floor(Math.random() * cfg.ops.length)];
         const max = cfg.maxNum;
-        // レベルに応じて少し数を大きくする
-        const levelBonus = Math.min(this.level - 1, Math.floor(max * 0.4));
-        const effectiveMax = Math.min(max, Math.max(3, Math.floor(max * 0.6) + levelBonus));
 
         let a, b, answer;
         if (op === '+') {
-            a = this._randInt(1, effectiveMax);
-            b = this._randInt(1, effectiveMax);
+            a = this._randInt(1, max);
+            b = this._randInt(1, max);
             answer = a + b;
         } else {
-            a = this._randInt(1, effectiveMax);
+            a = this._randInt(1, max);
             b = this._randInt(1, a); // 答えが0以上になるよう
             answer = a - b;
         }
@@ -314,9 +303,9 @@ class FlashSanzan {
     _animateProblemTimer() {
         if (this.isPaused || !this.isRunning || this.answeredCurrent) return;
         const cfg = this._cfg();
-        const totalMs  = cfg.problemTimeSec * 1000;
-        const elapsed  = performance.now() - this.problemStartTs;
-        const ratio    = Math.max(0, 1 - elapsed / totalMs);
+        const totalMs = cfg.problemTimeSec * 1000;
+        const elapsed = performance.now() - this.problemStartTs;
+        const ratio   = Math.max(0, 1 - elapsed / totalMs);
         this.timerFill.style.transition = 'none';
         this.timerFill.style.width = (ratio * 100) + '%';
         if (ratio < 0.35) {
@@ -329,8 +318,8 @@ class FlashSanzan {
 
     _scheduleProblemTimeout() {
         const cfg = this._cfg();
-        const totalMs  = cfg.problemTimeSec * 1000;
-        const elapsed  = performance.now() - this.problemStartTs;
+        const totalMs   = cfg.problemTimeSec * 1000;
+        const elapsed   = performance.now() - this.problemStartTs;
         const remaining = Math.max(0, totalMs - elapsed);
         this.problemTimerId = setTimeout(() => {
             if (!this.answeredCurrent && this.isRunning && !this.isPaused) {
@@ -341,7 +330,12 @@ class FlashSanzan {
 
     _onTimeout() {
         this._disableChoices();
+        // 正解ボタンを光らせる
+        this.choicesGrid.querySelectorAll('.choice-btn').forEach(b => {
+            if (Number(b.textContent) === this.currentAnswer) b.classList.add('correct');
+        });
         this._showFeedback(false, '⏰ じかんきれ！');
+        this.questionIndex++;
         this._scheduleNext(1200);
     }
 
@@ -355,29 +349,23 @@ class FlashSanzan {
         }
 
         const correct = val === this.currentAnswer;
-        // ボタン色を変える
         this._disableChoices();
         btn.classList.add(correct ? 'correct' : 'wrong');
-        // 正解ボタンも光らせる
         if (!correct) {
+            // 正解ボタンも光らせる（まちがえてもペナルティなし）
             this.choicesGrid.querySelectorAll('.choice-btn').forEach(b => {
                 if (Number(b.textContent) === this.currentAnswer) b.classList.add('correct');
             });
         }
 
         if (correct) {
-            const cfg = this._cfg();
-            const bonus = Math.floor(cfg.scorePerCorrect * (1 + (this.level - 1) * 0.1));
-            this.score += bonus;
             this.correctCount++;
-            // レベルアップ: 5問正解ごと
-            if (this.correctCount % 5 === 0) this.level++;
-            this._updateHUD();
             this._showFeedback(true, '⭕ せいかい！');
         } else {
             this._showFeedback(false, '✖ まちがい');
         }
 
+        this.questionIndex++;
         this._scheduleNext(900);
     }
 
@@ -414,8 +402,10 @@ class FlashSanzan {
     }
 
     _updateHUD() {
-        this.scoreEl.textContent = `スコア: ${this.score}`;
-        this.levelEl.textContent = `レベル: ${this.level}`;
+        const cfg = this._cfg();
+        this.scoreEl.textContent = `もんだい: ${this.questionIndex + 1}/${cfg.totalQuestions}`;
+        this.levelEl.textContent = `せいかい: ${this.correctCount}`;
+        this.timeEl.textContent  = `のこり: ${cfg.totalQuestions - this.questionIndex}もん`;
     }
 
     _showScreen(name) {
@@ -430,16 +420,14 @@ class FlashSanzan {
     }
 
     _clearAllTimers() {
-        clearInterval(this.gameTimerId);
         clearTimeout(this.problemTimerId);
         clearTimeout(this.feedbackTimerId);
         clearInterval(this.countdownTimerId);
         if (this.problemRafId) cancelAnimationFrame(this.problemRafId);
-        this.gameTimerId    = null;
-        this.problemTimerId = null;
-        this.feedbackTimerId = null;
+        this.problemTimerId   = null;
+        this.feedbackTimerId  = null;
         this.countdownTimerId = null;
-        this.problemRafId   = null;
+        this.problemRafId     = null;
     }
 }
 
