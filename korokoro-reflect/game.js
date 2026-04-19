@@ -330,12 +330,12 @@ class KorokoroReflect {
         };
     }
 
-    _scaledStageRadius(radius, minRadius = 0) {
+    _scaledStageRadius(radius, minimumRadius = 0) {
         const scale = Math.min(
             this.width / this.STAGE_BASE_WIDTH,
             this.height / this.STAGE_BASE_HEIGHT
         );
-        return Math.max(minRadius, radius * scale);
+        return Math.max(minimumRadius, radius * scale);
     }
 
     _clampCircleCenter(point, radius) {
