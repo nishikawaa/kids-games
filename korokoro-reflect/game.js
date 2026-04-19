@@ -38,8 +38,8 @@ class KorokoroReflect {
         this.DIFFICULTY_MIN_OBSTACLE_WIDTH = 56;
         this.DIFFICULTY_MAX_OBSTACLE_WIDTH = 104;
         this.STAR_TEXTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E";
-        this.FAIL_MESSAGE_DURATION = 3000;
-        this.STUCK_MESSAGE_DURATION = 4300;
+        this.FAIL_BADGE_DURATION = 3000;
+        this.STUCK_BADGE_DURATION = 4300;
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -731,7 +731,7 @@ class KorokoroReflect {
         this.engine.gravity.y = 0;
         this.startBtn.disabled = false;
         this.playArea.classList.remove('stuck-fail');
-        const durationMs = reasonType === 'stuck' ? this.STUCK_MESSAGE_DURATION : this.FAIL_MESSAGE_DURATION;
+        const durationMs = reasonType === 'stuck' ? this.STUCK_BADGE_DURATION : this.FAIL_BADGE_DURATION;
         this._showFxBadge(reasonText, 'fail', durationMs);
         this._flashPlayArea('fail-flash');
         if (reasonType === 'stuck') {
