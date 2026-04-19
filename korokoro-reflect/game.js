@@ -230,12 +230,12 @@ class KorokoroReflect {
 
     _onPointerDown(event) {
         if (event.cancelable) event.preventDefault();
-        if (typeof event.pointerId === 'number') {
-            this.playArea.setPointerCapture(event.pointerId);
-        }
         if (this.isStarted || this.isPaused) return;
         const point = this._eventToWorldPoint(event);
         if (!point) return;
+        if (typeof event.pointerId === 'number') {
+            this.playArea.setPointerCapture(event.pointerId);
+        }
 
         const hit = this.Matter.Query.point(this.placedBlocks, point)[0];
         if (hit) {
