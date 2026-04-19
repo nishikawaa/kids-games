@@ -8,6 +8,8 @@ class KorokoroReflect {
         this.BLOCK_WIDTH = 96;
         this.BLOCK_HEIGHT = 18;
         this.BLOCK_MOVE_MARGIN = 20;
+        this.STAGE_BASE_WIDTH = 320;
+        this.STAGE_BASE_HEIGHT = 420;
 
         this.stageText = document.getElementById('stageText');
         this.starText = document.getElementById('starText');
@@ -206,7 +208,10 @@ class KorokoroReflect {
 
     _buildGoal() {
         const g = this.stage.goal;
-        this.goalSensor = this.Matter.Bodies.circle(g.x, g.y, g.r, {
+        const point = this._scaledStagePoint(g);
+        const r = this._scaledStageRadius(g.r, 14);
+        const safePoint = this._clampCircleCenter(point, r);
+        this.goalSensor = this.Matter.Bodies.circle(safePoint.x, safePoint.y, r, {
             isStatic: true,
             isSensor: true,
             label: 'goal',
@@ -231,8 +236,9 @@ class KorokoroReflect {
     }
 
     _buildSpawnGuide() {
-        const s = this.stage.spawn;
-        this.spawnGuide = this.Matter.Bodies.circle(s.x, s.y, 18, {
+        const point = this._scaledStagePoint(this.stage.spawn);
+        const safePoint = this._clampCircleCenter(point, 18);
+        this.spawnGuide = this.Matter.Bodies.circle(safePoint.x, safePoint.y, 18, {
             isStatic: true,
             isSensor: true,
             label: 'spawn-guide',
@@ -317,6 +323,28 @@ class KorokoroReflect {
         return { x, y };
     }
 
+    _scaledStagePoint(point) {
+        return {
+            x: (point.x / this.STAGE_BASE_WIDTH) * this.width,
+            y: (point.y / this.STAGE_BASE_HEIGHT) * this.height
+        };
+    }
+
+    _scaledStageRadius(radius, minRadius = 0) {
+        const scale = Math.min(
+            this.width / this.STAGE_BASE_WIDTH,
+            this.height / this.STAGE_BASE_HEIGHT
+        );
+        return Math.max(minRadius, radius * scale);
+    }
+
+    _clampCircleCenter(point, radius) {
+        return {
+            x: Math.min(this.width - radius, Math.max(radius, point.x)),
+            y: Math.min(this.height - radius, Math.max(radius, point.y))
+        };
+    }
+
     _rotateSelected() {
         if (this.isStarted || !this.selectedBlock) return;
         this.Matter.Body.rotate(this.selectedBlock, this.ROTATION_INCREMENT);
@@ -358,8 +386,8 @@ class KorokoroReflect {
         this.pauseBtn.disabled = false;
 
         this.engine.gravity.y = 1.02;
-        const s = this.stage.spawn;
-        this.ball = this.Matter.Bodies.circle(s.x, s.y, 14, {
+        const safeSpawn = this._clampCircleCenter(this._scaledStagePoint(this.stage.spawn), 14);
+        this.ball = this.Matter.Bodies.circle(safeSpawn.x, safeSpawn.y, 14, {
             label: 'ball',
             restitution: 0.8,
             friction: 0.01,
