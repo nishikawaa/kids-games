@@ -289,7 +289,6 @@ class KorokoroReflect {
     }
 
     _buildStageDefinitionOverrides(total) {
-        if (total < 4) return {};
         return {
             4: {
                 maxBlocks: 3,
@@ -301,7 +300,7 @@ class KorokoroReflect {
     }
 
     _mergeStageDefinition(base, override) {
-        if (!override || typeof override !== 'object') return base;
+        if (!override || typeof override !== 'object' || Array.isArray(override)) return base;
         const mergedSpawn = override.spawn
             ? { ...base.spawn, ...override.spawn }
             : { ...base.spawn };
@@ -309,8 +308,8 @@ class KorokoroReflect {
             ? { ...base.goal, ...override.goal }
             : { ...base.goal };
         const mergedObstacles = Array.isArray(override.obstacles)
-            ? override.obstacles.map((obstacle) => ({ ...obstacle }))
-            : base.obstacles.map((obstacle) => ({ ...obstacle }));
+            ? override.obstacles.map((obstacle) => this._cloneValue(obstacle))
+            : base.obstacles.map((obstacle) => this._cloneValue(obstacle));
         const mergedTools = Array.isArray(override.availableTools)
             ? [...override.availableTools]
             : [...base.availableTools];
@@ -323,6 +322,12 @@ class KorokoroReflect {
             obstacles: mergedObstacles,
             availableTools: mergedTools
         };
+    }
+
+    _cloneValue(value) {
+        if (value == null || typeof value !== 'object') return value;
+        if (typeof structuredClone === 'function') return structuredClone(value);
+        return JSON.parse(JSON.stringify(value));
     }
 
     _ensureReachableGoal(spawn, goal, spawnDirection) {
