@@ -70,6 +70,8 @@ class KorokoroReflect {
 
         this.stageListBtn = document.getElementById('stageListBtn');
         this.helpBtn = document.getElementById('helpBtn');
+        this.menuBtn = document.getElementById('menuBtn');
+        this.menuPanel = document.getElementById('menuPanel');
         this.stageSelectModal = document.getElementById('stageSelectModal');
         this.stageList = document.getElementById('stageList');
         this.closeStageListBtn = document.getElementById('closeStageListBtn');
@@ -103,7 +105,7 @@ class KorokoroReflect {
         this.paletteDragPointerId = null;
         this.paletteDragSourceBtn = null;
         this.dragGhost = null;
-        this.dragGhostIcon = null;
+        this.dragGhostShape = null;
         this.lastRippleAtMs = 0;
         this.stuckFrames = 0;
         this.fxTimerId = null;
@@ -244,9 +246,19 @@ class KorokoroReflect {
         this._bindToolDragEvents(this.selectCircleBtn, 'circle');
         this._bindToolDragEvents(this.selectStarBtn, 'star');
 
-        this.stageListBtn.addEventListener('click', () => this._toggleModal(this.stageSelectModal, true));
+        this.menuBtn.addEventListener('click', () => {
+            const isOpen = !this.menuPanel.classList.contains('hidden');
+            this._toggleHeaderMenu(!isOpen);
+        });
+        this.stageListBtn.addEventListener('click', () => {
+            this._toggleHeaderMenu(false);
+            this._toggleModal(this.stageSelectModal, true);
+        });
         this.closeStageListBtn.addEventListener('click', () => this._toggleModal(this.stageSelectModal, false));
-        this.helpBtn.addEventListener('click', () => this._toggleModal(this.helpModal, true));
+        this.helpBtn.addEventListener('click', () => {
+            this._toggleHeaderMenu(false);
+            this._toggleModal(this.helpModal, true);
+        });
         this.closeHelpBtn.addEventListener('click', () => this._closeHelp());
 
         this.stageSelectModal.addEventListener('click', (event) => {
@@ -254,6 +266,11 @@ class KorokoroReflect {
         });
         this.helpModal.addEventListener('click', (event) => {
             if (event.target === this.helpModal) this._closeHelp();
+        });
+        document.addEventListener('pointerdown', (event) => {
+            if (!this.menuPanel || this.menuPanel.classList.contains('hidden')) return;
+            if (this.menuPanel.contains(event.target) || this.menuBtn?.contains(event.target)) return;
+            this._toggleHeaderMenu(false);
         });
 
         this.playArea.addEventListener('pointerdown', (event) => this._onPointerDown(event));
@@ -317,6 +334,13 @@ class KorokoroReflect {
     _toggleModal(modal, visible) {
         modal.classList.toggle('hidden', !visible);
         modal.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
+
+    _toggleHeaderMenu(visible) {
+        if (!this.menuPanel || !this.menuBtn) return;
+        this.menuPanel.classList.toggle('hidden', !visible);
+        this.menuPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        this.menuBtn.setAttribute('aria-expanded', visible ? 'true' : 'false');
     }
 
     _loadUnlockedStageCount() {
@@ -768,10 +792,10 @@ class KorokoroReflect {
 
     _initToolDragGhost() {
         this.dragGhost = document.createElement('span');
-        this.dragGhost.className = 'tool-drag-ghost hidden';
-        this.dragGhostIcon = document.createElement('span');
-        this.dragGhostIcon.className = 'tool-icon rect-icon';
-        this.dragGhost.appendChild(this.dragGhostIcon);
+        this.dragGhost.className = 'tool-drag-ghost rect hidden';
+        this.dragGhostShape = document.createElement('span');
+        this.dragGhostShape.className = 'ghost-shape';
+        this.dragGhost.appendChild(this.dragGhostShape);
         document.body.appendChild(this.dragGhost);
     }
 
@@ -781,10 +805,11 @@ class KorokoroReflect {
     }
 
     _updateToolDragGhost(clientX, clientY) {
-        if (!this.dragGhost || !this.dragGhostIcon || !this.paletteDragTool) return;
+        if (!this.dragGhost || !this.dragGhostShape || !this.paletteDragTool) return;
         this.dragGhost.style.left = `${clientX}px`;
         this.dragGhost.style.top = `${clientY}px`;
-        this.dragGhostIcon.className = `tool-icon ${this.paletteDragTool}-icon`;
+        this.dragGhost.classList.remove('rect', 'circle', 'star');
+        this.dragGhost.classList.add(this.paletteDragTool);
         const canDrop = Boolean(this._clientToPlayAreaPoint(clientX, clientY));
         this.dragGhost.classList.toggle('can-drop', canDrop);
     }

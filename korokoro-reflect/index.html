@@ -21,10 +21,12 @@
             <div class="status-row">
                 <span id="stageText">ステージ 1 / 100</span>
             </div>
-            <div class="header-buttons">
-                <button id="resetBtn" class="secondary">リセット</button>
-                <button id="stageListBtn" class="secondary">ステージ一覧</button>
-                <button id="helpBtn" class="secondary">あそび方</button>
+            <div class="header-menu">
+                <button id="menuBtn" class="secondary menu-toggle" aria-label="メニュー" aria-expanded="false">⚙️</button>
+                <div id="menuPanel" class="menu-panel hidden" aria-hidden="true">
+                    <button id="stageListBtn" class="secondary menu-item">ステージ一覧</button>
+                    <button id="helpBtn" class="secondary menu-item">あそび方</button>
+                </div>
             </div>
         </header>
 
@@ -60,11 +62,12 @@
                 </div>
                 <span id="stockText" class="sr-only">のこり: 1</span>
             </div>
-            <div class="tool-row">
+            <div class="tool-row utility-row">
                 <button id="rotateBtn" class="tool-btn icon-btn" aria-label="15度回転">
                     <span class="rotate-icon" aria-hidden="true">⟲15°</span>
                 </button>
                 <button id="deleteBtn" class="tool-btn">削除</button>
+                <button id="resetBtn" class="secondary">リセット</button>
             </div>
             <div class="tool-row">
                 <button id="startBtn" class="primary">スタート</button>
