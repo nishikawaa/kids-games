@@ -289,21 +289,19 @@ class KorokoroReflect {
     }
 
     _buildStageDefinitionOverrides(total) {
-        const perStageOverrides = {};
-        for (let stageNumber = 1; stageNumber <= total; stageNumber += 1) {
-            perStageOverrides[stageNumber] = {};
-        }
-        perStageOverrides[4] = {
-            maxBlocks: 3,
-            obstacles: [
-                { type: 'rect', x: 166, y: 214, w: 72, h: 14, angle: 0.14 }
-            ]
+        if (total < 4) return {};
+        return {
+            4: {
+                maxBlocks: 3,
+                obstacles: [
+                    { type: 'rect', x: 166, y: 214, w: 72, h: 14, angle: 0.14 }
+                ]
+            }
         };
-        return perStageOverrides;
     }
 
     _mergeStageDefinition(base, override) {
-        if (!override || typeof override !== 'object') return { ...base };
+        if (!override || typeof override !== 'object') return base;
         const mergedSpawn = override.spawn
             ? { ...base.spawn, ...override.spawn }
             : { ...base.spawn };
