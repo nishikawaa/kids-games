@@ -23,6 +23,7 @@ class KorokoroReflect {
         this.STAGE_LEVEL_STEP = 20;
         this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
         this.STAGE_TOTAL = 100;
+        this.DEFAULT_SPAWN_DIRECTION = 'down';
         this.CIRCLE_UNLOCK_STAGE = 4;
         this.STAR_UNLOCK_STAGE = 9;
         this.BLOCKS_DECREASE_INTERVAL = 6;
@@ -48,6 +49,7 @@ class KorokoroReflect {
         this.FAIL_BADGE_DURATION = 3000;
         this.STUCK_BADGE_DURATION = 4300;
         this.MIN_REQUIRED_BLOCKS = 1;
+        this.DEFAULT_AVAILABLE_TOOLS = ['rect'];
         this.DEFAULT_AVAILABLE_TOOLS = ['rect'];
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
         this.BLOCK_TAP_MOVE_THRESHOLD = 9;
@@ -241,7 +243,7 @@ class KorokoroReflect {
     _buildStages(stageDefinitions) {
         return stageDefinitions.map((definition) => ({
             spawn: { ...definition.spawn },
-            spawnDirection: definition.spawnDirection || 'down',
+            spawnDirection: definition.spawnDirection || this.DEFAULT_SPAWN_DIRECTION,
             spawnSpeed: definition.spawnSpeed,
             goal: { ...definition.goal },
             maxBlocks: definition.maxBlocks,
@@ -1174,7 +1176,7 @@ class KorokoroReflect {
     }
 
     _getSpawnInitialVelocity() {
-        const direction = this.stage.spawnDirection || 'down';
+        const direction = this.stage.spawnDirection || this.DEFAULT_SPAWN_DIRECTION;
         const speed = Math.max(0.1, this.stage.spawnSpeed || this.SPAWN_SPEED_VERTICAL);
         if (direction === 'right') {
             return { x: Math.abs(speed), y: this.SPAWN_VERTICAL_BIAS };
