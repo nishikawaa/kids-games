@@ -10,6 +10,8 @@ class KorokoroReflect {
         this.BLOCK_MOVE_MARGIN = 20;
         this.STAGE_BASE_WIDTH = 320;
         this.STAGE_BASE_HEIGHT = 420;
+        this.BALL_RADIUS = 14;
+        this.SPAWN_GUIDE_RADIUS = 18;
 
         this.stageText = document.getElementById('stageText');
         this.starText = document.getElementById('starText');
@@ -209,7 +211,7 @@ class KorokoroReflect {
     _buildGoal() {
         const g = this.stage.goal;
         const point = this._scaledStagePoint(g);
-        const r = this._scaledStageRadius(g.r, 14);
+        const r = this._scaledStageRadius(g.r, this.BALL_RADIUS);
         const safePoint = this._clampCircleCenter(point, r);
         this.goalSensor = this.Matter.Bodies.circle(safePoint.x, safePoint.y, r, {
             isStatic: true,
@@ -237,8 +239,8 @@ class KorokoroReflect {
 
     _buildSpawnGuide() {
         const point = this._scaledStagePoint(this.stage.spawn);
-        const safePoint = this._clampCircleCenter(point, 18);
-        this.spawnGuide = this.Matter.Bodies.circle(safePoint.x, safePoint.y, 18, {
+        const safePoint = this._clampCircleCenter(point, this.SPAWN_GUIDE_RADIUS);
+        this.spawnGuide = this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.SPAWN_GUIDE_RADIUS, {
             isStatic: true,
             isSensor: true,
             label: 'spawn-guide',
@@ -386,8 +388,8 @@ class KorokoroReflect {
         this.pauseBtn.disabled = false;
 
         this.engine.gravity.y = 1.02;
-        const safeSpawn = this._clampCircleCenter(this._scaledStagePoint(this.stage.spawn), 14);
-        this.ball = this.Matter.Bodies.circle(safeSpawn.x, safeSpawn.y, 14, {
+        const safeSpawn = this._clampCircleCenter(this._scaledStagePoint(this.stage.spawn), this.BALL_RADIUS);
+        this.ball = this.Matter.Bodies.circle(safeSpawn.x, safeSpawn.y, this.BALL_RADIUS, {
             label: 'ball',
             restitution: 0.8,
             friction: 0.01,
