@@ -306,7 +306,7 @@ class KorokoroReflect {
                 body.render.lineWidth = 3;
             } else {
                 body.render.strokeStyle = '#2563eb';
-                body.render.lineWidth = 0;
+                body.render.lineWidth = 1;
             }
         });
     }
