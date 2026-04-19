@@ -15,6 +15,9 @@ class KorokoroReflect {
 
         this.STAGE_BASE_WIDTH = 320;
         this.STAGE_BASE_HEIGHT = 420;
+        this.STAGE_VARIATION_STEP = 17;
+        this.STAGE_VARIATION_SPAN = 70;
+        this.STAGE_VARIATION_CENTER = 35;
         this.BALL_RADIUS = 14;
         this.SPAWN_GUIDE_RADIUS = 18;
         this.STAGE_LEVEL_STEP = 20;
@@ -32,6 +35,11 @@ class KorokoroReflect {
         this.STAR_SPRITE_SCALE = 0.4;
         this.SPAWN_SPEED_HORIZONTAL = 2.6;
         this.SPAWN_SPEED_VERTICAL = 2.2;
+        this.SPAWN_VERTICAL_BIAS = -0.08;
+        this.SPAWN_DOWNWARD_SCALE = 0.08;
+        this.OBSTACLE_VARIATION_MULTIPLIER = 7;
+        this.OBSTACLE_VARIATION_SPAN = 11;
+        this.OBSTACLE_VARIATION_CENTER = 5;
         this.DIFFICULTY_BASE_OBSTACLE_WIDTH = 94;
         this.DIFFICULTY_OBSTACLE_WIDTH_STEP = 3;
         this.DIFFICULTY_MIN_OBSTACLE_WIDTH = 56;
@@ -189,7 +197,7 @@ class KorokoroReflect {
 
         return Array.from({ length: total }, (_, index) => {
             const template = templates[index % templates.length];
-            const variationStep = ((index * 17) % 70) - 35;
+            const variationStep = ((index * this.STAGE_VARIATION_STEP) % this.STAGE_VARIATION_SPAN) - this.STAGE_VARIATION_CENTER;
             const level = Math.floor(index / this.STAGE_LEVEL_STEP);
             const stageNumber = index + 1;
 
@@ -244,7 +252,7 @@ class KorokoroReflect {
     }
 
     _createStageObstacleVariant(obstacle, stageIndex, obstacleIndex, level) {
-        const offset = ((stageIndex + obstacleIndex * 7) % 11) - 5;
+        const offset = ((stageIndex + obstacleIndex * this.OBSTACLE_VARIATION_MULTIPLIER) % this.OBSTACLE_VARIATION_SPAN) - this.OBSTACLE_VARIATION_CENTER;
         const base = {
             ...obstacle,
             x: this._clampValue(obstacle.x + offset * 4, 24, 296),
@@ -1169,15 +1177,15 @@ class KorokoroReflect {
         const direction = this.stage.spawnDirection || 'down';
         const speed = Math.max(0.1, this.stage.spawnSpeed || this.SPAWN_SPEED_VERTICAL);
         if (direction === 'right') {
-            return { x: Math.abs(speed), y: -0.08 };
+            return { x: Math.abs(speed), y: this.SPAWN_VERTICAL_BIAS };
         }
         if (direction === 'left') {
-            return { x: -Math.abs(speed), y: -0.08 };
+            return { x: -Math.abs(speed), y: this.SPAWN_VERTICAL_BIAS };
         }
         if (direction === 'up') {
             return { x: 0, y: -Math.abs(speed) };
         }
-        return { x: 0, y: Math.abs(speed) * 0.08 };
+        return { x: 0, y: Math.abs(speed) * this.SPAWN_DOWNWARD_SCALE };
     }
 
     _registerCollision() {
