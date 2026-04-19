@@ -594,8 +594,8 @@ class KorokoroReflect {
         if (event.cancelable) event.preventDefault();
         if (this.isStarted) return;
 
-        const point = this._eventToWorldPoint(event);
-        if (!point) return;
+        const point = this._clientToPlayAreaPointRaw(event.clientX, event.clientY);
+        if (!point || this._isPointOutsidePlayArea(point)) return;
 
         const hit = this.Matter.Query.point(this.placedBlocks, point)[0];
         if (hit) {
@@ -803,6 +803,10 @@ class KorokoroReflect {
         return point;
     }
 
+    /**
+     * Returns pointer coordinates in play-area local space without bounds checks.
+     * Use `_clientToPlayAreaPoint` when the pointer must be inside the play area.
+     */
     _clientToPlayAreaPointRaw(clientX, clientY) {
         const rect = this.playArea.getBoundingClientRect();
         if (!rect.width || !rect.height) return null;
