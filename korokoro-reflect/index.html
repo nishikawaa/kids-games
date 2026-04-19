@@ -47,7 +47,18 @@
                 </button>
             </div>
             <div class="tool-row stock-row">
-                <span id="stockText">のこり: 1</span>
+                <div
+                    id="stockMeter"
+                    class="stock-meter"
+                    role="progressbar"
+                    aria-label="のこりブロック"
+                    aria-valuemin="0"
+                    aria-valuemax="1"
+                    aria-valuenow="1"
+                >
+                    <span id="stockBar" class="stock-meter-fill"></span>
+                </div>
+                <span id="stockText" class="sr-only">のこり: 1</span>
             </div>
             <div class="tool-row">
                 <button id="rotateBtn" class="tool-btn icon-btn" aria-label="15度回転">

@@ -43,6 +43,8 @@ class KorokoroReflect {
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
+        this.stockMeter = document.getElementById('stockMeter');
+        this.stockBar = document.getElementById('stockBar');
         this.fxBadge = document.getElementById('fxBadge');
 
         this.playArea = document.getElementById('playArea');
@@ -305,7 +307,13 @@ class KorokoroReflect {
 
     _syncStageButtonsLock() {
         this.stageButtons.forEach((button, index) => {
-            button.disabled = index + 1 > this.unlockedStageCount;
+            const stageNumber = index + 1;
+            const isLocked = stageNumber > this.unlockedStageCount;
+            const isCleared = stageNumber < this.unlockedStageCount;
+            const isNextUnlocked = stageNumber === this.unlockedStageCount;
+            button.disabled = isLocked;
+            button.classList.toggle('cleared', isCleared);
+            button.classList.toggle('next-unlocked', isNextUnlocked);
         });
     }
 
@@ -663,6 +671,14 @@ class KorokoroReflect {
     _updateBlockStock() {
         const remain = this.stage.maxBlocks - this.placedBlocks.length;
         this.stockText.textContent = `のこり: ${remain}`;
+        if (this.stockMeter) {
+            this.stockMeter.setAttribute('aria-valuemax', String(this.stage.maxBlocks));
+            this.stockMeter.setAttribute('aria-valuenow', String(remain));
+        }
+        if (this.stockBar) {
+            const ratio = this.stage.maxBlocks > 0 ? remain / this.stage.maxBlocks : 0;
+            this.stockBar.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+        }
     }
 
     _syncSelectionUI() {

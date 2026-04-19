@@ -111,6 +111,36 @@ main {
     display: block;
 }
 
+.stock-meter {
+    width: 100%;
+    height: 14px;
+    border-radius: 999px;
+    background: #e5e7eb;
+    overflow: hidden;
+    box-shadow: inset 0 1px 3px rgba(15, 23, 42, 0.18);
+}
+
+.stock-meter-fill {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #34d399, #10b981);
+    transition: width 0.2s ease;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .tool-select-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
 }
@@ -242,14 +272,29 @@ button:disabled {
     font-weight: 700;
 }
 
+.stage-item.cleared {
+    background: #bbf7d0;
+    color: #166534;
+}
+
+.stage-item.next-unlocked {
+    background: #fef3c7;
+    color: #92400e;
+    box-shadow: inset 0 0 0 2px #f59e0b;
+}
+
 .stage-item.active {
     background: #4338ca;
     color: #ffffff;
+    box-shadow: none;
 }
 
 .stage-item:disabled {
-    opacity: 0.45;
+    background: #e5e7eb;
+    color: #94a3b8;
+    opacity: 1;
     cursor: not-allowed;
+    box-shadow: none;
 }
 
 .play-area.fail-flash {
