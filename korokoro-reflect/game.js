@@ -47,6 +47,7 @@ class KorokoroReflect {
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
         this.BLOCK_TAP_MOVE_THRESHOLD = 9;
         this.BLOCK_TAP_MOVE_THRESHOLD_SQUARED = this.BLOCK_TAP_MOVE_THRESHOLD * this.BLOCK_TAP_MOVE_THRESHOLD;
+        this.CLEAR_OVERLAY_DELAY_MS = 650;
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -115,6 +116,7 @@ class KorokoroReflect {
         this.fxTimerId = null;
         this.blockPointerState = null;
         this.previousControlDisabledStates = new Map();
+        this.clearOverlayTimerId = null;
         this._onDocumentPointerDown = (event) => {
             if (!this.menuPanel || !this.menuBtn || this.menuPanel.classList.contains('hidden')) return;
             if (this.menuPanel.contains(event.target) || this.menuBtn.contains(event.target)) return;
@@ -483,6 +485,10 @@ class KorokoroReflect {
         this.draggingBlock = null;
         this.stuckFrames = 0;
         document.body.classList.remove('dragging-tool');
+        if (this.clearOverlayTimerId) {
+            clearTimeout(this.clearOverlayTimerId);
+            this.clearOverlayTimerId = null;
+        }
 
         this.engine.gravity.y = 0;
         this.Matter.World.clear(this.world, false);
@@ -1014,7 +1020,10 @@ class KorokoroReflect {
         this._showFxBadge('クリア！', 'clear', 1300);
         this._flashPlayArea('clear-flash');
         this._setNextButtonReady(false);
-        this._setClearOverlayVisible(true);
+        this.clearOverlayTimerId = setTimeout(() => {
+            this._setClearOverlayVisible(true);
+            this.clearOverlayTimerId = null;
+        }, this.CLEAR_OVERLAY_DELAY_MS);
         this.startBtn.disabled = true;
     }
 
