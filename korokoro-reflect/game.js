@@ -45,6 +45,7 @@ class KorokoroReflect {
         this.MIN_REQUIRED_BLOCKS = 1;
         this.DEFAULT_AVAILABLE_TOOLS = ['rect'];
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
+        this.BLOCK_TAP_MOVE_THRESHOLD = 9;
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -56,7 +57,6 @@ class KorokoroReflect {
         this.startBtn = document.getElementById('startBtn');
         this.resetBtn = document.getElementById('resetBtn');
         this.nextBtn = document.getElementById('nextBtn');
-        this.rotateBtn = document.getElementById('rotateBtn');
         this.deleteBtn = document.getElementById('deleteBtn');
 
         this.selectRectBtn = document.getElementById('selectRectBtn');
@@ -109,6 +109,7 @@ class KorokoroReflect {
         this.lastRippleAtMs = 0;
         this.stuckFrames = 0;
         this.fxTimerId = null;
+        this.blockPointerState = null;
         this._onDocumentPointerDown = (event) => {
             if (!this.menuPanel || !this.menuBtn || this.menuPanel.classList.contains('hidden')) return;
             if (this.menuPanel.contains(event.target) || this.menuBtn.contains(event.target)) return;
@@ -245,7 +246,6 @@ class KorokoroReflect {
         this.startBtn.addEventListener('click', () => this._startBall());
         this.resetBtn.addEventListener('click', () => this._loadStage(this.stageIndex));
         this.nextBtn.addEventListener('click', () => this._onNextStage());
-        this.rotateBtn.addEventListener('click', () => this._rotateSelected());
         this.deleteBtn.addEventListener('click', () => this._deleteSelected());
 
         this._bindToolDragEvents(this.selectRectBtn, 'rect');
@@ -445,7 +445,7 @@ class KorokoroReflect {
 
         this.stageText.textContent = `ステージ ${this.stageIndex + 1} / ${this.stages.length}`;
         this.startBtn.disabled = false;
-        this.nextBtn.disabled = true;
+        this._setNextButtonReady(false);
         this.playArea.classList.remove('fail-flash', 'clear-flash', 'stuck-fail');
         if (this.fxTimerId) {
             clearTimeout(this.fxTimerId);
@@ -547,10 +547,17 @@ class KorokoroReflect {
                 this.playArea.setPointerCapture(event.pointerId);
             }
             this.selectedBlock = hit;
-            this.draggingBlock = hit;
+            this.blockPointerState = {
+                pointerId: event.pointerId,
+                block: hit,
+                startPoint: point,
+                moved: false
+            };
+            this.draggingBlock = null;
             this._syncSelectionUI();
             return;
         }
+        this.blockPointerState = null;
         this.selectedBlock = null;
         this._syncSelectionUI();
     }
@@ -607,11 +614,22 @@ class KorokoroReflect {
 
     _onPointerMove(event) {
         if (event.cancelable) event.preventDefault();
-        if (!this.draggingBlock || this.isStarted) return;
+        if (this.isStarted || !this.blockPointerState) return;
+        if (this.blockPointerState.pointerId !== event.pointerId) return;
 
         const point = this._eventToWorldPoint(event);
         if (!point) return;
 
+        if (!this.blockPointerState.moved) {
+            const dx = point.x - this.blockPointerState.startPoint.x;
+            const dy = point.y - this.blockPointerState.startPoint.y;
+            if (Math.hypot(dx, dy) >= this.BLOCK_TAP_MOVE_THRESHOLD) {
+                this.blockPointerState.moved = true;
+                this.draggingBlock = this.blockPointerState.block;
+            }
+        }
+
+        if (!this.blockPointerState.moved || !this.draggingBlock) return;
         const safePoint = this._clampBodyPosition(this.draggingBlock, point);
         this.Matter.Body.setPosition(this.draggingBlock, safePoint);
     }
@@ -624,6 +642,16 @@ class KorokoroReflect {
         ) {
             this.playArea.releasePointerCapture(event.pointerId);
         }
+        if (
+            !this.isStarted
+            && this.blockPointerState
+            && this.blockPointerState.pointerId === event?.pointerId
+            && !this.blockPointerState.moved
+            && this.blockPointerState.block
+        ) {
+            this._rotateBlock(this.blockPointerState.block);
+        }
+        this.blockPointerState = null;
         this.draggingBlock = null;
     }
 
@@ -843,9 +871,9 @@ class KorokoroReflect {
         this.playArea.classList.add(className);
     }
 
-    _rotateSelected() {
-        if (this.isStarted || !this.selectedBlock) return;
-        this.Matter.Body.rotate(this.selectedBlock, this.ROTATION_INCREMENT);
+    _rotateBlock(block) {
+        if (this.isStarted || !block) return;
+        this.Matter.Body.rotate(block, this.ROTATION_INCREMENT);
     }
 
     _deleteSelected() {
@@ -935,7 +963,7 @@ class KorokoroReflect {
         this._syncStageButtonsLock();
         this._showFxBadge('クリア！', 'clear', 1300);
         this._flashPlayArea('clear-flash');
-        this.nextBtn.disabled = this.stageIndex + 1 >= this.stages.length;
+        this._setNextButtonReady(true);
         this.startBtn.disabled = true;
     }
 
@@ -967,6 +995,12 @@ class KorokoroReflect {
             return;
         }
         this._loadStage(this.stageIndex + 1);
+    }
+
+    _setNextButtonReady(isReady) {
+        const canAdvance = isReady && this.stageIndex < this.stages.length - 1;
+        this.nextBtn.disabled = !canAdvance;
+        this.nextBtn.classList.toggle('ready', canAdvance);
     }
 
     _tick() {

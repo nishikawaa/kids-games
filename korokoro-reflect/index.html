@@ -63,11 +63,10 @@
                 <span id="stockText" class="sr-only">のこり: 1</span>
             </div>
             <div class="tool-row utility-row">
-                <button id="rotateBtn" class="tool-btn icon-btn" aria-label="15度回転">
-                    <span class="rotate-icon" aria-hidden="true">⟲15°</span>
-                </button>
                 <button id="deleteBtn" class="tool-btn">削除</button>
-                <button id="resetBtn" class="secondary">リセット</button>
+                <button id="resetBtn" class="secondary icon-btn reset-icon-btn" aria-label="リセット">
+                    <span class="reset-icon" aria-hidden="true">↻</span>
+                </button>
             </div>
             <div class="tool-row">
                 <button id="startBtn" class="primary">スタート</button>
@@ -88,8 +87,8 @@
                 <h2>あそび方</h2>
                 <ol class="help-list">
                     <li>下の形アイコンを指でドラッグして、プレイエリアに置きます。</li>
-                    <li>置いたブロックはドラッグで動かせます。</li>
-                    <li>回転や削除で配置を調整し、スタートを押します。</li>
+                    <li>置いたブロックはタップで回転、ドラッグで動かせます。</li>
+                    <li>削除で配置を調整し、スタートを押します。</li>
                     <li>赤い輪からボールが出て、緑の円に入るとクリアです。</li>
                 </ol>
                 <button id="closeHelpBtn" class="primary">OK</button>
