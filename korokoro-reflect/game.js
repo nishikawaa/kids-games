@@ -766,7 +766,7 @@ class KorokoroReflect {
             } else if (speed < this.STUCK_MIN_SPEED && y > this.height * this.STUCK_CHECK_HEIGHT_RATIO) {
                 this.stuckFrames += 1;
                 if (this.stuckFrames > this.STUCK_MAX_FRAMES) {
-                    this._onFail('ぼーるがとまったよ。ハイチをかえてみよう！', 'stuck');
+                    this._onFail('ぼーるがとまったよ。はいちをかえてみよう！', 'stuck');
                 }
             } else {
                 this.stuckFrames = 0;
