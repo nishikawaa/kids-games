@@ -128,8 +128,11 @@ class KorokoroReflect {
 
         this.render = null;
         this.world = this.engine.world;
-        this.stageDefinitionOverrides = this._buildStageDefinitionOverrides(this.STAGE_TOTAL);
-        this.stages = this._buildStages(this._buildStageDefinitions(this.STAGE_TOTAL, this.stageDefinitionOverrides));
+        const generatedStageDefinitions = this._buildStageDefinitions(this.STAGE_TOTAL, {});
+        this.stageDefinitionOverrides = this._buildStageDefinitionOverrides(this.STAGE_TOTAL, generatedStageDefinitions);
+        this.stages = this._buildStages(generatedStageDefinitions.map((definition, index) => (
+            this._mergeStageDefinition(definition, this.stageDefinitionOverrides[index + 1], index + 1)
+        )));
         this.stageIndex = 0;
         this.unlockedStageCount = this._loadUnlockedStageCount();
         this.stageButtons = [];
@@ -288,19 +291,19 @@ class KorokoroReflect {
         });
     }
 
-    _buildStageDefinitionOverrides(total) {
-        const generatedDefinitions = this._buildStageDefinitions(total, {});
-        const overrides = generatedDefinitions.reduce((acc, definition, index) => {
+    _buildStageDefinitionOverrides(total, generatedDefinitions = null) {
+        const sourceDefinitions = generatedDefinitions ?? this._buildStageDefinitions(total, {});
+        const overrides = sourceDefinitions.reduce((acc, definition, index) => {
             const stageNumber = index + 1;
             acc[stageNumber] = {
-                spawn: this._cloneValue(definition.spawn),
+                spawn: definition.spawn,
                 spawnDirection: definition.spawnDirection,
                 spawnSpeed: definition.spawnSpeed,
-                goal: this._cloneValue(definition.goal),
+                goal: definition.goal,
                 maxBlocks: definition.maxBlocks,
                 minRequiredBlocks: definition.minRequiredBlocks,
-                availableTools: this._cloneValue(definition.availableTools),
-                obstacles: this._cloneValue(definition.obstacles)
+                availableTools: definition.availableTools,
+                obstacles: definition.obstacles
             };
             return acc;
         }, {});
