@@ -41,6 +41,7 @@ class KorokoroReflect {
         this.FAIL_BADGE_DURATION = 3000;
         this.STUCK_BADGE_DURATION = 4300;
         this.MIN_REQUIRED_BLOCKS = 1;
+        this.DEFAULT_AVAILABLE_TOOLS = ['rect'];
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
 
         this.stageText = document.getElementById('stageText');
@@ -181,10 +182,7 @@ class KorokoroReflect {
                 spawn,
                 goal,
                 maxBlocks: Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
-                minRequiredBlocks: Math.min(
-                    this.MIN_REQUIRED_BLOCKS,
-                    Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks)
-                ),
+                minRequiredBlocks: this.MIN_REQUIRED_BLOCKS,
                 availableTools,
                 obstacles: [...obstacles, ...extraObstacles]
             };
@@ -380,7 +378,7 @@ class KorokoroReflect {
     }
 
     _syncToolAvailability() {
-        const availableTools = this.stage?.availableTools ?? ['rect'];
+        const availableTools = this.stage?.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS;
         Object.entries(this.toolButtons).forEach(([tool, button]) => {
             button.disabled = !availableTools.includes(tool);
         });
