@@ -971,12 +971,9 @@ class KorokoroReflect {
         if (!block) return;
         this.Matter.World.remove(this.world, block);
         this.placedBlocks = this.placedBlocks.filter((body) => body !== block);
-        if (this.selectedBlock !== block) {
-            this._syncSelectionUI();
-            this._updateBlockStock();
-            return;
+        if (this.selectedBlock === block) {
+            this.selectedBlock = null;
         }
-        this.selectedBlock = null;
         this._syncSelectionUI();
         this._updateBlockStock();
     }
