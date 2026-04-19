@@ -386,6 +386,7 @@ class KorokoroReflect {
             button.disabled = !isAvailable;
             button.classList.toggle('tool-hidden', !isAvailable);
             button.setAttribute('aria-hidden', isAvailable ? 'false' : 'true');
+            button.tabIndex = isAvailable ? 0 : -1;
         });
         if (!availableTools.includes(this.selectedTool)) {
             this.selectedTool = availableTools[0];
