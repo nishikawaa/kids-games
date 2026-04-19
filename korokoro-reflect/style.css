@@ -55,6 +55,7 @@ main {
 
 .game-header {
     position: relative;
+    padding: 0 46px;
 }
 
 .status-row {
@@ -76,6 +77,12 @@ main {
 .header-menu {
     position: absolute;
     right: 0;
+    top: 0;
+}
+
+.header-reset {
+    position: absolute;
+    left: 0;
     top: 0;
 }
 
@@ -147,7 +154,7 @@ main {
 }
 
 .utility-row {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr;
 }
 
 #stockText {
