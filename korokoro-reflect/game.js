@@ -852,7 +852,7 @@ class KorokoroReflect {
         if (this.isStarted) return;
         const requiredBlocks = this.stage.minRequiredBlocks ?? this.MIN_REQUIRED_BLOCKS;
         if (this.placedBlocks.length < requiredBlocks) {
-            this._showFxBadge('ブロックを1つおいてからスタートしよう！', 'fail', 1300);
+            this._showFxBadge(`ブロックを${requiredBlocks}つおいてからスタートしよう！`, 'fail', 1300);
             return;
         }
 
