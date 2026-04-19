@@ -113,7 +113,7 @@ class KorokoroReflect {
 
         return Array.from({ length: total }, (_, index) => {
             const template = baseStages[index % baseStages.length];
-            const offset = ((index * this.STAGE_VARIATION_STEP) % this.STAGE_VARIATION_SPAN) - this.STAGE_VARIATION_CENTER;
+            const offset = this._calculateStageOffset(index);
             const level = Math.floor(index / this.STAGE_LEVEL_STEP);
 
             const spawn = {
@@ -204,6 +204,7 @@ class KorokoroReflect {
             button.type = 'button';
             button.className = 'stage-item';
             button.textContent = String(stageIndex + 1);
+            button.setAttribute('aria-label', `ステージ ${stageIndex + 1}`);
             button.addEventListener('click', () => {
                 this._toggleModal(this.stageSelectModal, false);
                 this._loadStage(stageIndex);
@@ -439,7 +440,13 @@ class KorokoroReflect {
                 label: 'tool-star',
                 render: { fillStyle: '#fbbf24', strokeStyle: '#d97706', lineWidth: 1 }
             }, true);
-            return this._firstBody(starBody);
+            const safeBody = this._firstBody(starBody);
+            if (safeBody) return safeBody;
+            return this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.STAR_TOOL_OUTER_RADIUS, {
+                ...options,
+                label: 'tool-star',
+                render: { fillStyle: '#fbbf24', strokeStyle: '#d97706', lineWidth: 1 }
+            });
         }
 
         return null;
@@ -533,8 +540,13 @@ class KorokoroReflect {
         return Math.min(max, Math.max(min, value));
     }
 
+    _calculateStageOffset(index) {
+        return ((index * this.STAGE_VARIATION_STEP) % this.STAGE_VARIATION_SPAN) - this.STAGE_VARIATION_CENTER;
+    }
+
     _firstBody(body) {
-        return Array.isArray(body) ? body[0] : body;
+        const first = Array.isArray(body) ? body[0] : body;
+        return first && typeof first === 'object' ? first : null;
     }
 
     _rotateSelected() {
