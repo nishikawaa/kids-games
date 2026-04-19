@@ -128,7 +128,8 @@ class KorokoroReflect {
 
         this.render = null;
         this.world = this.engine.world;
-        this.stages = this._buildStages(this._buildStageDefinitions(this.STAGE_TOTAL));
+        this.stageDefinitionOverrides = this._buildStageDefinitionOverrides(this.STAGE_TOTAL);
+        this.stages = this._buildStages(this._buildStageDefinitions(this.STAGE_TOTAL, this.stageDefinitionOverrides));
         this.stageIndex = 0;
         this.unlockedStageCount = this._loadUnlockedStageCount();
         this.stageButtons = [];
@@ -177,7 +178,7 @@ class KorokoroReflect {
         this._initToolDragGhost();
     }
 
-    _buildStageDefinitions(total) {
+    _buildStageDefinitions(total, overrides = {}) {
         const templates = [
             {
                 spawn: { x: 70, y: 36 },
@@ -268,7 +269,7 @@ class KorokoroReflect {
                 level
             });
 
-            return {
+            const generatedDefinition = {
                 spawn,
                 spawnDirection: template.spawnDirection,
                 spawnSpeed: ['left', 'right'].includes(template.spawnDirection)
@@ -280,7 +281,50 @@ class KorokoroReflect {
                 availableTools,
                 obstacles
             };
+            const stageOverride = overrides[stageNumber];
+            return stageOverride
+                ? this._mergeStageDefinition(generatedDefinition, stageOverride)
+                : generatedDefinition;
         });
+    }
+
+    _buildStageDefinitionOverrides(total) {
+        const perStageOverrides = {};
+        for (let stageNumber = 1; stageNumber <= total; stageNumber += 1) {
+            perStageOverrides[stageNumber] = {};
+        }
+        perStageOverrides[4] = {
+            maxBlocks: 3,
+            obstacles: [
+                { type: 'rect', x: 166, y: 214, w: 72, h: 14, angle: 0.14 }
+            ]
+        };
+        return perStageOverrides;
+    }
+
+    _mergeStageDefinition(base, override) {
+        if (!override || typeof override !== 'object') return { ...base };
+        const mergedSpawn = override.spawn
+            ? { ...base.spawn, ...override.spawn }
+            : { ...base.spawn };
+        const mergedGoal = override.goal
+            ? { ...base.goal, ...override.goal }
+            : { ...base.goal };
+        const mergedObstacles = Array.isArray(override.obstacles)
+            ? override.obstacles.map((obstacle) => ({ ...obstacle }))
+            : base.obstacles.map((obstacle) => ({ ...obstacle }));
+        const mergedTools = Array.isArray(override.availableTools)
+            ? [...override.availableTools]
+            : [...base.availableTools];
+
+        return {
+            ...base,
+            ...override,
+            spawn: mergedSpawn,
+            goal: mergedGoal,
+            obstacles: mergedObstacles,
+            availableTools: mergedTools
+        };
     }
 
     _ensureReachableGoal(spawn, goal, spawnDirection) {
