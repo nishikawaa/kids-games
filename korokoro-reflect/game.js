@@ -252,6 +252,7 @@ class KorokoroReflect {
 
     _bindEvents() {
         this.startBtn.addEventListener('click', () => this._startBall());
+        this.startBtn.addEventListener('pointerdown', (event) => event.stopPropagation());
         this.resetBtn.addEventListener('click', () => this._loadStage(this.stageIndex));
         this.nextBtn.addEventListener('click', () => this._onNextStage());
 
@@ -590,12 +591,11 @@ class KorokoroReflect {
     }
 
     _onPointerDown(event) {
-        if (this.startBtn?.contains(event.target)) return;
         if (event.cancelable) event.preventDefault();
         if (this.isStarted) return;
 
-        const point = this._clientToPlayAreaPointRaw(event.clientX, event.clientY);
-        if (!point || this._isPointOutsidePlayArea(point)) return;
+        const point = this._clientToPlayAreaPoint(event.clientX, event.clientY);
+        if (!point) return;
 
         const hit = this.Matter.Query.point(this.placedBlocks, point)[0];
         if (hit) {
