@@ -1022,7 +1022,8 @@ class KorokoroReflect {
         this._showFxBadge('クリア！', 'clear', 1300);
         this._flashPlayArea('clear-flash');
         this._setNextButtonReady(false);
-        const overlayGeneration = ++this.clearOverlayGeneration;
+        this.clearOverlayGeneration += 1;
+        const overlayGeneration = this.clearOverlayGeneration;
         this.clearOverlayTimerId = setTimeout(() => {
             if (this.clearOverlayGeneration !== overlayGeneration) return;
             this.clearOverlayTimerId = null;
