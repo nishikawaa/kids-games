@@ -86,7 +86,17 @@ main {
     top: 0;
 }
 
-.header-icon-btn,
+.header-icon-btn {
+    min-height: 40px;
+    min-width: 44px;
+    padding: 8px 10px;
+    font-size: 1.05rem;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .menu-toggle {
     min-height: 40px;
     min-width: 44px;
@@ -267,12 +277,6 @@ button:disabled {
 .icon-btn {
     font-size: 1.12rem;
     letter-spacing: 0.02em;
-}
-
-.reset-icon-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
 }
 
 .reset-icon {
