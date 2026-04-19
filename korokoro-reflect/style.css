@@ -7,6 +7,7 @@
 body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(180deg, #d9f3ff 0%, #fce8ff 100%);
+    min-height: 100vh;
     min-height: 100dvh;
     display: flex;
     justify-content: center;
@@ -16,7 +17,8 @@ body {
         calc(8px + env(safe-area-inset-bottom))
         calc(8px + env(safe-area-inset-left));
     color: #1f2937;
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
 }
 
 .game-container {
@@ -69,6 +71,7 @@ main {
 
 .play-area {
     width: 100%;
+    height: clamp(220px, 44vh, 460px);
     height: clamp(220px, 44dvh, 460px);
     border-radius: 16px;
     overflow: hidden;
@@ -176,6 +179,7 @@ button:disabled {
     }
 
     .play-area {
+        height: clamp(200px, 40vh, 340px);
         height: clamp(200px, 40dvh, 340px);
     }
 
