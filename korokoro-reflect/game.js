@@ -292,30 +292,145 @@ class KorokoroReflect {
     }
 
     _buildStageDefinitionOverrides(total, generatedDefinitions) {
-        const overrides = generatedDefinitions.reduce((acc, definition, index) => {
+        const overrides = {};
+        for (let index = 0; index < total; index += 1) {
             const stageNumber = index + 1;
-            acc[stageNumber] = {
-                spawn: definition.spawn,
-                spawnDirection: definition.spawnDirection,
-                spawnSpeed: definition.spawnSpeed,
-                goal: definition.goal,
-                maxBlocks: definition.maxBlocks,
-                minRequiredBlocks: definition.minRequiredBlocks,
-                availableTools: definition.availableTools,
-                obstacles: definition.obstacles
-            };
-            return acc;
-        }, {});
-
-        overrides[4] = {
-            ...overrides[4],
-            maxBlocks: 3,
-            obstacles: [
-                { type: 'rect', x: 166, y: 214, w: 72, h: 14, angle: 0.14 }
-            ]
-        };
-
+            overrides[stageNumber] = this._buildTunedStageOverride(stageNumber, generatedDefinitions[index]);
+        }
         return overrides;
+    }
+
+    _buildTunedStageOverride(stageNumber, generatedDefinition) {
+        const stageProgress = (stageNumber - 1) / Math.max(1, this.STAGE_TOTAL - 1);
+        const difficultyTier = Math.floor((stageNumber - 1) / 10);
+        const seed = stageNumber * 37;
+        const spawn = {
+            x: this._clampValue(
+                generatedDefinition.spawn.x + (((seed % 9) - 4) * 1.6),
+                24,
+                296
+            ),
+            y: this._clampValue(
+                generatedDefinition.spawn.y + ((((seed >> 2) % 9) - 4) * 1.3),
+                24,
+                396
+            )
+        };
+        const goalRadius = this._clampValue(
+            generatedDefinition.goal.r - Math.floor(difficultyTier / 2) + ((stageNumber % 3) - 1),
+            this.MIN_GOAL_RADIUS,
+            24
+        );
+        const goal = this._ensureReachableGoal(
+            spawn,
+            {
+                x: this._clampValue(
+                    generatedDefinition.goal.x + ((((seed >> 1) % 11) - 5) * 1.4),
+                    26,
+                    294
+                ),
+                y: this._clampValue(
+                    generatedDefinition.goal.y + ((((seed >> 3) % 11) - 5) * 1.4),
+                    30,
+                    398
+                ),
+                r: goalRadius
+            },
+            generatedDefinition.spawnDirection
+        );
+        const maxBlocks = this._tuneStageMaxBlocks(stageNumber, generatedDefinition.maxBlocks);
+        const obstacles = this._tuneStageObstaclesForOverride({
+            stageNumber,
+            obstacles: generatedDefinition.obstacles,
+            spawn,
+            goal,
+            difficultyTier
+        });
+        const availableTools = stageNumber < this.CIRCLE_UNLOCK_STAGE
+            ? ['rect']
+            : stageNumber < this.STAR_UNLOCK_STAGE
+                ? ['rect', 'circle']
+                : ['rect', 'circle', 'star'];
+        const speedBias = 0.92 + (stageProgress * 0.18);
+        const baseSpeed = generatedDefinition.spawnSpeed || (
+            ['left', 'right'].includes(generatedDefinition.spawnDirection)
+                ? this.SPAWN_SPEED_HORIZONTAL
+                : this.SPAWN_SPEED_VERTICAL
+        );
+
+        return {
+            spawn,
+            spawnDirection: generatedDefinition.spawnDirection,
+            spawnSpeed: Number((baseSpeed * speedBias).toFixed(3)),
+            goal,
+            maxBlocks,
+            minRequiredBlocks: 1,
+            availableTools,
+            obstacles
+        };
+    }
+
+    _tuneStageMaxBlocks(stageNumber, baseMaxBlocks) {
+        if (stageNumber <= 4) return Math.max(2, Math.min(3, baseMaxBlocks + 1));
+        if (stageNumber <= 15) return Math.max(2, Math.min(3, baseMaxBlocks));
+        if (stageNumber <= 40) return Math.max(1, Math.min(3, baseMaxBlocks));
+        if (stageNumber <= 75) return Math.max(1, Math.min(2, baseMaxBlocks));
+        return 1;
+    }
+
+    _tuneStageObstaclesForOverride({ stageNumber, obstacles, spawn, goal, difficultyTier }) {
+        if (!Array.isArray(obstacles) || obstacles.length === 0) return [];
+        if (stageNumber === 1) return [];
+
+        const maxObstacles = this._getObstacleCapForStage(stageNumber);
+        const seeded = obstacles.map((obstacle, index) => {
+            const seed = (stageNumber * 29) + (index * 17);
+            const routeRatio = (index + 1) / (obstacles.length + 1);
+            const routeX = spawn.x + ((goal.x - spawn.x) * routeRatio);
+            const routeY = spawn.y + ((goal.y - spawn.y) * routeRatio);
+            const blendWeight = stageNumber <= 8 ? 0.34 : 0.52;
+            const lateral = ((seed % 7) - 3) * (stageNumber <= 20 ? 3.2 : 4.6);
+            const tuned = {
+                ...obstacle,
+                x: this._clampValue((obstacle.x * (1 - blendWeight)) + (routeX * blendWeight), 24, 296),
+                y: this._clampValue((obstacle.y * (1 - blendWeight)) + (routeY * blendWeight) + lateral, 44, 396),
+                angle: (obstacle.angle || 0) + ((((seed >> 1) % 5) - 2) * 0.03)
+            };
+
+            if (tuned.type === 'rect') {
+                tuned.w = this._clampValue(
+                    tuned.w - difficultyTier * 1.4,
+                    this.DIFFICULTY_MIN_OBSTACLE_WIDTH,
+                    this.DIFFICULTY_MAX_OBSTACLE_WIDTH
+                );
+            } else if (tuned.type === 'circle' || tuned.type === 'bumper') {
+                tuned.r = Math.max(this.MIN_OBSTACLE_RADIUS, (tuned.r || 16) - Math.floor(difficultyTier / 2));
+            } else if (tuned.type === 'star') {
+                tuned.outerR = Math.max(this.MIN_OBSTACLE_RADIUS + 4, (tuned.outerR || 20) - Math.floor(difficultyTier / 2));
+                tuned.innerR = Math.max(this.MIN_OBSTACLE_INNER_RADIUS, (tuned.innerR || 8) - Math.floor(difficultyTier / 3));
+            }
+            return tuned;
+        });
+
+        const balanced = this._balanceStageObstacles({
+            obstacles: seeded,
+            spawn,
+            goal,
+            stageNumber,
+            level: difficultyTier
+        }).slice(0, maxObstacles);
+
+        if (stageNumber >= this.BUMPER_UNLOCK_STAGE && !balanced.some((obstacle) => obstacle.type === 'bumper')) {
+            balanced.push(this._buildBumperObstacle(stageNumber - 1, difficultyTier, spawn, goal));
+        }
+
+        if (stageNumber === 4) {
+            return [
+                { type: 'rect', x: 166, y: 214, w: 72, h: 14, angle: 0.14 }
+            ];
+        }
+
+        return balanced.slice(0, maxObstacles);
     }
 
     _mergeStageDefinition(base, override, stageNumber = null) {
