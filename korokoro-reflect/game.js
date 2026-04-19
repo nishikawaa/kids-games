@@ -591,6 +591,10 @@ class KorokoroReflect {
         return ((index * this.STAGE_VARIATION_STEP) % this.STAGE_VARIATION_SPAN) - this.STAGE_VARIATION_CENTER;
     }
 
+    _nextUnlockStageCount() {
+        return Math.min(this.stages.length, this.stageIndex + 2);
+    }
+
     _showFxBadge(text, mode, durationMs) {
         if (!this.fxBadge) return;
         this.fxBadge.textContent = text;
@@ -685,7 +689,7 @@ class KorokoroReflect {
         this.isCleared = true;
         this.isStarted = false;
         this.engine.gravity.y = 0;
-        this.unlockedStageCount = Math.max(this.unlockedStageCount, Math.min(this.stages.length, this.stageIndex + 2));
+        this.unlockedStageCount = Math.max(this.unlockedStageCount, this._nextUnlockStageCount());
         this._saveUnlockedStageCount();
         this._syncStageButtonsLock();
         this._showFxBadge('クリア！', 'clear', 1300);
@@ -694,14 +698,14 @@ class KorokoroReflect {
         this.startBtn.disabled = true;
     }
 
-    _onFail(reasonText) {
+    _onFail(reasonText, reasonType = 'generic') {
         this.isStarted = false;
         this.engine.gravity.y = 0;
         this.startBtn.disabled = false;
         this.playArea.classList.remove('stuck-fail');
         this._showFxBadge(reasonText, 'fail', 1500);
         this._flashPlayArea('fail-flash');
-        if (reasonText.includes('止まった')) {
+        if (reasonType === 'stuck') {
             this.playArea.classList.add('stuck-fail');
         }
 
@@ -716,7 +720,7 @@ class KorokoroReflect {
             this._showFxBadge('ぜんぶクリア！', 'clear', 1500);
             return;
         }
-        if (this.stageIndex + 2 > this.unlockedStageCount) {
+        if (this._nextUnlockStageCount() > this.unlockedStageCount) {
             this._showFxBadge('先にいまのステージをクリアしよう！', 'fail', 1100);
             return;
         }
@@ -729,11 +733,11 @@ class KorokoroReflect {
             const y = this.ball.position.y;
 
             if (y > this.height + 26) {
-                this._onFail('ボールが落ちちゃった！リトライしよう。');
+                this._onFail('ボールが落ちちゃった！リトライしよう。', 'fall');
             } else if (speed < this.STUCK_MIN_SPEED && y > this.height * this.STUCK_CHECK_HEIGHT_RATIO) {
                 this.stuckFrames += 1;
                 if (this.stuckFrames > this.STUCK_MAX_FRAMES) {
-                    this._onFail('ボールが止まったよ。配置を変えてみよう！');
+                    this._onFail('ボールが止まったよ。配置を変えてみよう！', 'stuck');
                 }
             } else {
                 this.stuckFrames = 0;
