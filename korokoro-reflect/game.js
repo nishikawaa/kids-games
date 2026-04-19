@@ -29,9 +29,12 @@ class KorokoroReflect {
         this.BLOCKS_DECREASE_INTERVAL = 6;
         this.MAX_EXTRA_OBSTACLES = 3;
         this.MIN_BLOCKS_PER_STAGE = 1;
+        this.REACHABLE_GOAL_MIN_DROP = 52;
         this.MIN_GOAL_RADIUS = 14;
         this.MIN_OBSTACLE_RADIUS = 9;
         this.MIN_OBSTACLE_INNER_RADIUS = 4;
+        this.BUMPER_UNLOCK_STAGE = 5;
+        this.BUMPER_RESTITUTION = 1.16;
         this.STAR_PHYSICS_RADIUS_SCALE = 0.8;
         this.STAR_SPRITE_SCALE = 0.4;
         this.SPAWN_SPEED_HORIZONTAL = 2.6;
@@ -108,6 +111,7 @@ class KorokoroReflect {
         this.fixedBodies = [];
         this.goalSensor = null;
         this.spawnGuide = null;
+        this.spawnDirectionArrow = null;
         this.ball = null;
 
         this.isStarted = false;
@@ -216,12 +220,16 @@ class KorokoroReflect {
                 y: this._clampValue(template.goal.y - ((index + 2) % 4) * 6, 30, 398),
                 r: Math.max(this.MIN_GOAL_RADIUS, template.goal.r - Math.floor(level / 2))
             };
+            const reachableGoal = this._ensureReachableGoal(spawn, goal, template.spawnDirection);
             const obstacles = [
                 ...template.obstacles.map((obstacle, obstacleIndex) => (
                     this._createStageObstacleVariant(obstacle, index, obstacleIndex, level)
                 )),
                 ...this._buildDifficultyObstacles(level, index)
             ];
+            if (stageNumber >= this.BUMPER_UNLOCK_STAGE) {
+                obstacles.push(this._buildBumperObstacle(index, level));
+            }
 
             return {
                 spawn,
@@ -229,13 +237,32 @@ class KorokoroReflect {
                 spawnSpeed: ['left', 'right'].includes(template.spawnDirection)
                     ? this.SPAWN_SPEED_HORIZONTAL
                     : this.SPAWN_SPEED_VERTICAL,
-                goal,
+                goal: reachableGoal,
                 maxBlocks: Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
                 minRequiredBlocks: this.MIN_REQUIRED_BLOCKS,
                 availableTools,
                 obstacles
             };
         });
+    }
+
+    _ensureReachableGoal(spawn, goal, spawnDirection) {
+        const minDrop = ['left', 'right'].includes(spawnDirection)
+            ? this.REACHABLE_GOAL_MIN_DROP - 16
+            : this.REACHABLE_GOAL_MIN_DROP;
+        return {
+            ...goal,
+            y: this._clampValue(Math.max(goal.y, spawn.y + minDrop), 30, 398)
+        };
+    }
+
+    _buildBumperObstacle(stageIndex, level) {
+        return {
+            type: 'bumper',
+            x: this._clampValue(106 + ((stageIndex * 13) % 130), 36, 284),
+            y: this._clampValue(178 + ((stageIndex * 17) % 154), 78, 386),
+            r: Math.max(this.MIN_OBSTACLE_RADIUS + 2, 16 - Math.floor(level / 3))
+        };
     }
 
     _buildStages(stageDefinitions) {
@@ -284,6 +311,13 @@ class KorokoroReflect {
                 ...base,
                 outerR: Math.max(this.MIN_OBSTACLE_RADIUS + 4, obstacle.outerR - Math.floor(level / 2)),
                 innerR: Math.max(this.MIN_OBSTACLE_INNER_RADIUS, obstacle.innerR - Math.floor(level / 3))
+            };
+        }
+
+        if (obstacle.type === 'bumper') {
+            return {
+                ...base,
+                r: Math.max(this.MIN_OBSTACLE_RADIUS + 2, (obstacle.r || 16) - Math.floor(level / 3))
             };
         }
 
@@ -697,6 +731,14 @@ class KorokoroReflect {
                 if (body && obstacle.angle) {
                     this.Matter.Body.setAngle(body, obstacle.angle);
                 }
+            } else if (obstacle.type === 'bumper') {
+                const radius = this._scaledStageRadius(obstacle.r, this.MIN_OBSTACLE_RADIUS + 2);
+                body = this.Matter.Bodies.circle(point.x, point.y, radius, {
+                    isStatic: true,
+                    restitution: this.BUMPER_RESTITUTION,
+                    friction: 0.02,
+                    render: { fillStyle: '#ec4899', strokeStyle: '#9d174d', lineWidth: 3 }
+                });
             }
             if (!body) return;
             this.fixedBodies.push(body);
@@ -729,6 +771,25 @@ class KorokoroReflect {
             render: { fillStyle: 'rgba(239, 68, 68, 0.15)', strokeStyle: '#dc2626', lineWidth: 3 }
         });
         this.Matter.World.add(this.world, this.spawnGuide);
+        this._updateSpawnDirectionArrow(safePoint);
+    }
+
+    _updateSpawnDirectionArrow(point) {
+        if (!this.spawnDirectionArrow) {
+            this.spawnDirectionArrow = document.createElement('div');
+            this.spawnDirectionArrow.className = 'spawn-direction-arrow';
+            this.playArea.appendChild(this.spawnDirectionArrow);
+        }
+        const direction = this.stage.spawnDirection || this.DEFAULT_SPAWN_DIRECTION;
+        const symbols = {
+            up: '↑',
+            down: '↓',
+            left: '←',
+            right: '→'
+        };
+        this.spawnDirectionArrow.textContent = symbols[direction] || symbols.down;
+        this.spawnDirectionArrow.style.left = `${point.x}px`;
+        this.spawnDirectionArrow.style.top = `${point.y}px`;
     }
 
     _onPointerDown(event) {

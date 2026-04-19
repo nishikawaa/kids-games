@@ -32,6 +32,7 @@ body.dragging-tool {
     width: min(520px, 100%);
     max-height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
     max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 16px);
+    overflow-y: auto;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 20px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
@@ -46,6 +47,7 @@ main {
     flex-direction: column;
     gap: 8px;
     min-height: 0;
+    flex: 1 1 auto;
 }
 
 .game-header h1 {
@@ -133,14 +135,28 @@ main {
 
 .play-area {
     width: 100%;
-    height: clamp(250px, 52vh, 540px);
-    height: clamp(250px, 52dvh, 540px);
+    height: clamp(280px, 58vh, 620px);
+    height: clamp(280px, 58dvh, 620px);
     position: relative;
     border-radius: 16px;
     overflow: hidden;
     background: linear-gradient(180deg, #f0fbff 0%, #fffef5 100%);
     touch-action: none;
     box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+.spawn-direction-arrow {
+    position: absolute;
+    left: 0;
+    top: 0;
+    transform: translate(-50%, -50%);
+    z-index: 4;
+    pointer-events: none;
+    font-size: 21px;
+    font-weight: 900;
+    color: #dc2626;
+    line-height: 1;
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.95);
 }
 
 .play-area canvas {
@@ -707,8 +723,8 @@ button:disabled {
     }
 
     .play-area {
-        height: clamp(220px, 46vh, 390px);
-        height: clamp(220px, 46dvh, 390px);
+        height: clamp(250px, 52vh, 460px);
+        height: clamp(250px, 52dvh, 460px);
     }
 
     button {
