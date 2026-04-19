@@ -1,3 +1,15 @@
+const KOROKORO_STAGE_TOTAL = 100;
+
+function isValidStageDefinitions(stageDefinitions, expectedCount = KOROKORO_STAGE_TOTAL) {
+    return Array.isArray(stageDefinitions) && stageDefinitions.length === expectedCount;
+}
+
+function resolveAssetPath(basePath, assetName) {
+    const normalizedBase = (basePath || './');
+    const withTrailingSlash = normalizedBase.endsWith('/') ? normalizedBase : `${normalizedBase}/`;
+    return `${withTrailingSlash}${assetName}`;
+}
+
 class KorokoroReflect {
     constructor(options = {}) {
         this.RESIZE_THRESHOLD = 4;
@@ -25,7 +37,7 @@ class KorokoroReflect {
         this.SPAWN_GUIDE_RADIUS = 18;
         this.STAGE_LEVEL_STEP = 20;
         this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
-        this.STAGE_TOTAL = 100;
+        this.STAGE_TOTAL = KOROKORO_STAGE_TOTAL;
         this.DEFAULT_SPAWN_DIRECTION = 'down';
         this.CIRCLE_UNLOCK_STAGE = 4;
         this.STAR_UNLOCK_STAGE = 9;
@@ -666,7 +678,7 @@ class KorokoroReflect {
     }
 
     _areValidExternalStageDefinitions(stageDefinitions) {
-        return Array.isArray(stageDefinitions) && stageDefinitions.length === this.STAGE_TOTAL;
+        return isValidStageDefinitions(stageDefinitions, this.STAGE_TOTAL);
     }
 
     _createStageObstacleVariant(obstacle, stageIndex, obstacleIndex, level) {
@@ -1733,27 +1745,28 @@ class KorokoroReflect {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
     if (!window.Matter) {
         const stageText = document.getElementById('stageText');
         if (stageText) stageText.textContent = '読み込みに失敗しました。再読み込みしてください。';
         return;
     }
-    let stageDefinitions = null;
-    try {
-        const response = await fetch(`${window.__assetBase || ''}stages.json`, { cache: 'no-store' });
-        if (!response.ok) {
-            throw new Error(`Failed to fetch stage definitions: ${response.status}`);
-        }
-        const data = await response.json();
-        if (Array.isArray(data) && data.length === 100) {
+    (async () => {
+        let stageDefinitions = null;
+        try {
+            const response = await fetch(resolveAssetPath(window.__assetBase, 'stages.json'));
+            if (!response.ok) {
+                throw new Error(`Failed to fetch stage definitions: ${response.status} ${response.statusText}`);
+            }
+            const data = await response.json();
+            if (!isValidStageDefinitions(data)) {
+                throw new Error('Invalid stage definitions format');
+            }
             stageDefinitions = data;
-        } else {
-            throw new Error('Invalid stage definitions format');
+        } catch (error) {
+            console.warn('Using built-in stage definitions because stages.json could not be loaded.', error);
         }
-    } catch (error) {
-        console.warn('Using built-in stage definitions because stages.json could not be loaded.', error);
-    }
 
-    new KorokoroReflect({ stageDefinitions });
+        new KorokoroReflect({ stageDefinitions });
+    })();
 });
