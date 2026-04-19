@@ -113,8 +113,9 @@ class KorokoroReflect {
         this.selectRectBtn.addEventListener('click', () => this._setTool('rect'));
 
         this.playArea.addEventListener('pointerdown', (e) => this._onPointerDown(e));
-        window.addEventListener('pointermove', (e) => this._onPointerMove(e));
-        window.addEventListener('pointerup', () => this._onPointerUp());
+        this.playArea.addEventListener('pointermove', (e) => this._onPointerMove(e));
+        this.playArea.addEventListener('pointerup', (e) => this._onPointerUp(e));
+        this.playArea.addEventListener('pointercancel', (e) => this._onPointerUp(e));
 
         window.addEventListener('resize', () => this._resizeAndReload());
     }
@@ -143,6 +144,7 @@ class KorokoroReflect {
     }
 
     _loadStage(index) {
+        const wasPaused = this.isPaused;
         this.stageIndex = index;
         this.stage = this.stages[index];
         this.isStarted = false;
@@ -160,6 +162,9 @@ class KorokoroReflect {
         this._buildWalls();
         this._buildGoal();
         this._buildObstacles();
+        if (wasPaused) {
+            this.Matter.Runner.run(this.runner, this.engine);
+        }
 
         this.stageText.textContent = `ステージ ${this.stageIndex + 1} / ${this.stages.length}`;
         this.stateText.textContent = '配置中';
@@ -224,6 +229,10 @@ class KorokoroReflect {
     }
 
     _onPointerDown(event) {
+        if (event.cancelable) event.preventDefault();
+        if (typeof event.pointerId === 'number') {
+            this.playArea.setPointerCapture(event.pointerId);
+        }
         if (this.isStarted || this.isPaused) return;
         const point = this._eventToWorldPoint(event);
         if (!point) return;
@@ -257,6 +266,7 @@ class KorokoroReflect {
     }
 
     _onPointerMove(event) {
+        if (event.cancelable) event.preventDefault();
         if (!this.draggingBlock || this.isStarted || this.isPaused) return;
         const point = this._eventToWorldPoint(event);
         if (!point) return;
@@ -267,7 +277,14 @@ class KorokoroReflect {
         this.Matter.Body.setPosition(this.draggingBlock, { x, y });
     }
 
-    _onPointerUp() {
+    _onPointerUp(event) {
+        if (event?.cancelable) event.preventDefault();
+        if (
+            typeof event?.pointerId === 'number'
+            && this.playArea.hasPointerCapture(event.pointerId)
+        ) {
+            this.playArea.releasePointerCapture(event.pointerId);
+        }
         this.draggingBlock = null;
     }
 

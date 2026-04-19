@@ -7,15 +7,17 @@
 body {
     font-family: 'Arial', sans-serif;
     background: linear-gradient(180deg, #d9f3ff 0%, #fce8ff 100%);
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     justify-content: center;
-    padding: 10px;
+    padding: calc(8px + env(safe-area-inset-top)) 10px calc(8px + env(safe-area-inset-bottom));
     color: #1f2937;
+    overflow: hidden;
 }
 
 .game-container {
     width: min(520px, 100%);
+    max-height: 100%;
     background: rgba(255, 255, 255, 0.9);
     border-radius: 20px;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
@@ -23,6 +25,13 @@ body {
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 0;
 }
 
 .game-header h1 {
@@ -56,7 +65,7 @@ body {
 
 .play-area {
     width: 100%;
-    aspect-ratio: 3 / 4;
+    height: clamp(220px, 44dvh, 460px);
     border-radius: 16px;
     overflow: hidden;
     background: linear-gradient(180deg, #f0fbff 0%, #fffef5 100%);
@@ -153,5 +162,21 @@ button:disabled {
     button {
         min-height: 44px;
         font-size: 0.88rem;
+    }
+}
+
+@media (max-height: 760px) {
+    .game-container {
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .play-area {
+        height: clamp(200px, 40dvh, 340px);
+    }
+
+    button {
+        min-height: 42px;
+        padding: 8px 10px;
     }
 }
