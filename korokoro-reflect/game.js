@@ -1,9 +1,13 @@
 class KorokoroReflect {
     constructor() {
+        this.RESIZE_THRESHOLD = 4;
         this.ROTATION_INCREMENT = Math.PI / 12;
         this.STUCK_MIN_SPEED = 0.08;
         this.STUCK_CHECK_HEIGHT_RATIO = 0.68;
         this.STUCK_MAX_FRAMES = 140;
+        this.BLOCK_WIDTH = 96;
+        this.BLOCK_HEIGHT = 18;
+        this.BLOCK_MOVE_MARGIN = 20;
 
         this.stageText = document.getElementById('stageText');
         this.starText = document.getElementById('starText');
@@ -119,7 +123,10 @@ class KorokoroReflect {
         const newWidth = this.playArea.clientWidth;
         const newHeight = this.playArea.clientHeight;
         if (!newWidth || !newHeight) return;
-        if (Math.abs(newWidth - this.width) < 4 && Math.abs(newHeight - this.height) < 4) return;
+        if (
+            Math.abs(newWidth - this.width) < this.RESIZE_THRESHOLD
+            && Math.abs(newHeight - this.height) < this.RESIZE_THRESHOLD
+        ) return;
 
         this.width = newWidth;
         this.height = newHeight;
@@ -235,7 +242,7 @@ class KorokoroReflect {
             return;
         }
 
-        const block = this.Matter.Bodies.rectangle(point.x, point.y, 96, 18, {
+        const block = this.Matter.Bodies.rectangle(point.x, point.y, this.BLOCK_WIDTH, this.BLOCK_HEIGHT, {
             isStatic: true,
             restitution: 0.92,
             friction: 0.04,
@@ -254,7 +261,7 @@ class KorokoroReflect {
         const point = this._eventToWorldPoint(event);
         if (!point) return;
 
-        const margin = 20;
+        const margin = this.BLOCK_MOVE_MARGIN;
         const x = Math.min(this.width - margin, Math.max(margin, point.x));
         const y = Math.min(this.height - margin, Math.max(margin, point.y));
         this.Matter.Body.setPosition(this.draggingBlock, { x, y });
