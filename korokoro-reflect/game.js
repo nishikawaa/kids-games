@@ -251,7 +251,8 @@ class KorokoroReflect {
             return;
         }
 
-        const block = this.Matter.Bodies.rectangle(point.x, point.y, this.BLOCK_WIDTH, this.BLOCK_HEIGHT, {
+        const safePoint = this._clampBlockPosition(point);
+        const block = this.Matter.Bodies.rectangle(safePoint.x, safePoint.y, this.BLOCK_WIDTH, this.BLOCK_HEIGHT, {
             isStatic: true,
             restitution: 0.92,
             friction: 0.04,
@@ -271,10 +272,7 @@ class KorokoroReflect {
         const point = this._eventToWorldPoint(event);
         if (!point) return;
 
-        const margin = this.BLOCK_MOVE_MARGIN;
-        const x = Math.min(this.width - margin, Math.max(margin, point.x));
-        const y = Math.min(this.height - margin, Math.max(margin, point.y));
-        this.Matter.Body.setPosition(this.draggingBlock, { x, y });
+        this.Matter.Body.setPosition(this.draggingBlock, this._clampBlockPosition(point));
     }
 
     _onPointerUp(event) {
@@ -294,6 +292,14 @@ class KorokoroReflect {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+        return { x, y };
+    }
+
+    _clampBlockPosition(point) {
+        const marginX = Math.max(this.BLOCK_MOVE_MARGIN, this.BLOCK_WIDTH / 2);
+        const marginY = Math.max(this.BLOCK_MOVE_MARGIN, this.BLOCK_HEIGHT / 2);
+        const x = Math.min(this.width - marginX, Math.max(marginX, point.x));
+        const y = Math.min(this.height - marginY, Math.max(marginY, point.y));
         return { x, y };
     }
 
