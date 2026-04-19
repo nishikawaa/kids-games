@@ -623,7 +623,8 @@ class KorokoroReflect {
         if (!this.blockPointerState.moved) {
             const dx = point.x - this.blockPointerState.startPoint.x;
             const dy = point.y - this.blockPointerState.startPoint.y;
-            if (Math.hypot(dx, dy) >= this.BLOCK_TAP_MOVE_THRESHOLD) {
+            const movedDistanceSquared = (dx * dx) + (dy * dy);
+            if (movedDistanceSquared >= this.BLOCK_TAP_MOVE_THRESHOLD * this.BLOCK_TAP_MOVE_THRESHOLD) {
                 this.blockPointerState.moved = true;
                 this.draggingBlock = this.blockPointerState.block;
             }
