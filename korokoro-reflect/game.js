@@ -382,7 +382,10 @@ class KorokoroReflect {
     _syncToolAvailability() {
         const availableTools = this.stage?.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS;
         Object.entries(this.toolButtons).forEach(([tool, button]) => {
-            button.disabled = !availableTools.includes(tool);
+            const isAvailable = availableTools.includes(tool);
+            button.disabled = !isAvailable;
+            button.classList.toggle('tool-hidden', !isAvailable);
+            button.setAttribute('aria-hidden', isAvailable ? 'false' : 'true');
         });
         if (!availableTools.includes(this.selectedTool)) {
             this.selectedTool = availableTools[0];
@@ -402,6 +405,7 @@ class KorokoroReflect {
         this.fixedBodies = [];
         this.draggingBlock = null;
         this.stuckFrames = 0;
+        document.body.classList.remove('dragging-tool');
 
         this.engine.gravity.y = 0;
         this.Matter.World.clear(this.world, false);
@@ -612,6 +616,7 @@ class KorokoroReflect {
         ) {
             this.paletteDragSourceBtn.setPointerCapture(event.pointerId);
         }
+        document.body.classList.add('dragging-tool');
         this._updateToolDragGhost(event.clientX, event.clientY);
         this._setToolDragGhostVisible(true);
     }
@@ -654,6 +659,7 @@ class KorokoroReflect {
         this.paletteDragPointerId = null;
         this.paletteDragSourceBtn = null;
         this._setToolDragGhostVisible(false);
+        document.body.classList.remove('dragging-tool');
     }
 
     _eventToWorldPoint(event) {

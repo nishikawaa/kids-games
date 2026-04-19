@@ -19,6 +19,13 @@ body {
     color: #1f2937;
     overflow-x: hidden;
     overflow-y: auto;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+body.dragging-tool {
+    overflow: hidden;
 }
 
 .game-container {
@@ -198,6 +205,14 @@ button:disabled {
 
 .shape-btn {
     min-height: 50px;
+    touch-action: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+}
+
+.shape-btn.tool-hidden {
+    display: none;
 }
 
 .icon-btn {
