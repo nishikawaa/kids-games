@@ -43,6 +43,7 @@ class KorokoroReflect {
         this.rafId = null;
 
         this.stages = [
+            // obstacle angle values are radians
             {
                 spawn: { x: 70, y: 36 },
                 goal: { x: 270, y: 390, r: 24 },
@@ -54,7 +55,7 @@ class KorokoroReflect {
                 goal: { x: 66, y: 390, r: 24 },
                 maxBlocks: 2,
                 obstacles: [
-                    { type: 'rect', x: 160, y: 210, w: 110, h: 16, angle: -0.2 } // radians
+                    { type: 'rect', x: 160, y: 210, w: 110, h: 16, angle: -0.2 }
                 ]
             },
             {
@@ -414,7 +415,7 @@ class KorokoroReflect {
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.Matter) {
         const text = document.getElementById('messageText');
-        if (text) text.textContent = '読み込みに失敗しました。ページを再読み込みしてください。';
+        if (text) text.textContent = '物理エンジンの読み込みに失敗しました。ページを再読み込みしてください。';
         return;
     }
     new KorokoroReflect();
