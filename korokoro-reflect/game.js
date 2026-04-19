@@ -291,9 +291,8 @@ class KorokoroReflect {
         });
     }
 
-    _buildStageDefinitionOverrides(total, generatedDefinitions = null) {
-        const sourceDefinitions = generatedDefinitions ?? this._buildStageDefinitions(total, {});
-        const overrides = sourceDefinitions.reduce((acc, definition, index) => {
+    _buildStageDefinitionOverrides(total, generatedDefinitions) {
+        const overrides = generatedDefinitions.reduce((acc, definition, index) => {
             const stageNumber = index + 1;
             acc[stageNumber] = {
                 spawn: definition.spawn,
