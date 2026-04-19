@@ -35,6 +35,7 @@ class KorokoroReflect {
         this.OBSTACLE_INDEX_SEED_MULTIPLIER = 17;
         this.BALL_RADIUS = 14;
         this.MOBILE_BALL_RADIUS_SCALE = 2 / 3;
+        this.MIN_MOBILE_BALL_RADIUS = 6;
         this.MOBILE_LAYOUT_MAX_WIDTH = 768;
         this.SPAWN_GUIDE_RADIUS = 18;
         this.STAGE_LEVEL_STEP = 20;
@@ -688,8 +689,12 @@ class KorokoroReflect {
     _resolveSpawnDirection(definition) {
         const direction = definition.spawnDirection || this.DEFAULT_SPAWN_DIRECTION;
         if (direction !== 'up') return direction;
-        const spawnX = definition?.spawn?.x ?? 0;
-        const goalX = definition?.goal?.x ?? spawnX;
+        const spawnX = Number(definition?.spawn?.x);
+        const goalX = Number(definition?.goal?.x);
+        if (!Number.isFinite(spawnX) || !Number.isFinite(goalX)) {
+            console.warn('Invalid stage coordinates for upward spawn; falling back to default spawn direction.', definition);
+            return this.DEFAULT_SPAWN_DIRECTION;
+        }
         return goalX < spawnX ? 'left' : 'right';
     }
 
@@ -1002,7 +1007,7 @@ class KorokoroReflect {
 
     _updateBallRadiusForViewport() {
         const isMobile = window.matchMedia(`(max-width: ${this.MOBILE_LAYOUT_MAX_WIDTH}px)`).matches;
-        const mobileBallRadius = Math.max(6, Math.round(this.BALL_RADIUS * this.MOBILE_BALL_RADIUS_SCALE));
+        const mobileBallRadius = Math.max(this.MIN_MOBILE_BALL_RADIUS, Math.round(this.BALL_RADIUS * this.MOBILE_BALL_RADIUS_SCALE));
         this.currentBallRadius = isMobile ? mobileBallRadius : this.BALL_RADIUS;
     }
 
@@ -1750,10 +1755,11 @@ class KorokoroReflect {
 
     _tick() {
         if (this.isStarted && this.ball) {
+            const horizontalSpeed = Math.abs(this.ball.velocity.x);
             if (
                 this.ball.velocity.y > this.DOWNHILL_MIN_VERTICAL_SPEED
-                && Math.abs(this.ball.velocity.x) > this.DOWNHILL_MIN_HORIZONTAL_SPEED
-                && Math.abs(this.ball.velocity.x) < this.DOWNHILL_MAX_HORIZONTAL_SPEED
+                && horizontalSpeed > this.DOWNHILL_MIN_HORIZONTAL_SPEED
+                && horizontalSpeed < this.DOWNHILL_MAX_HORIZONTAL_SPEED
             ) {
                 this.Matter.Body.setVelocity(this.ball, {
                     x: this.ball.velocity.x * this.DOWNHILL_ACCEL_FACTOR,
