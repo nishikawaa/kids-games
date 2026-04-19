@@ -439,9 +439,11 @@ class KorokoroReflect {
                 ...options,
                 label: 'tool-star',
                 render: { fillStyle: '#fbbf24', strokeStyle: '#d97706', lineWidth: 1 }
+            // keep internal edges flagged for stable rendering of multi-vertex star shapes
             }, true);
             const safeBody = this._firstBody(starBody);
             if (safeBody) return safeBody;
+            // fallback keeps placement usable if star vertex decomposition is unavailable
             return this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.STAR_TOOL_OUTER_RADIUS, {
                 ...options,
                 label: 'tool-star',
