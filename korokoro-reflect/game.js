@@ -17,6 +17,14 @@ class KorokoroReflect {
         this.STAGE_BASE_HEIGHT = 420;
         this.BALL_RADIUS = 14;
         this.SPAWN_GUIDE_RADIUS = 18;
+        this.STAGE_VARIATION_STEP = 17;
+        this.STAGE_VARIATION_SPAN = 70;
+        this.STAGE_VARIATION_CENTER = 35;
+        this.STAGE_LEVEL_STEP = 20;
+        this.SPAWN_SHIFT_RATE = 0.75;
+        this.GOAL_SHIFT_RATE = 0.8;
+        this.OBSTACLE_SHIFT_BASE = 0.4;
+        this.OBSTACLE_SHIFT_STEP = 0.1;
 
         this.stageText = document.getElementById('stageText');
         this.messageText = document.getElementById('messageText');
@@ -105,22 +113,26 @@ class KorokoroReflect {
 
         return Array.from({ length: total }, (_, index) => {
             const template = baseStages[index % baseStages.length];
-            const offset = ((index * 17) % 70) - 35;
-            const level = Math.floor(index / 20);
+            const offset = ((index * this.STAGE_VARIATION_STEP) % this.STAGE_VARIATION_SPAN) - this.STAGE_VARIATION_CENTER;
+            const level = Math.floor(index / this.STAGE_LEVEL_STEP);
 
             const spawn = {
-                x: this._clampValue(template.spawn.x + offset * 0.75, 34, 286),
+                x: this._clampValue(template.spawn.x + offset * this.SPAWN_SHIFT_RATE, 34, 286),
                 y: this._clampValue(template.spawn.y + (index % 4), 32, 84)
             };
             const goal = {
-                x: this._clampValue(template.goal.x - offset * 0.8, 34, 286),
+                x: this._clampValue(template.goal.x - offset * this.GOAL_SHIFT_RATE, 34, 286),
                 y: this._clampValue(template.goal.y - (index % 5) * 4, 300, 398),
                 r: template.goal.r
             };
 
             const obstacles = template.obstacles.map((obstacle, obstacleIndex) => ({
                 ...obstacle,
-                x: this._clampValue(obstacle.x + offset * (0.4 + obstacleIndex * 0.1), 52, 268),
+                x: this._clampValue(
+                    obstacle.x + offset * (this.OBSTACLE_SHIFT_BASE + obstacleIndex * this.OBSTACLE_SHIFT_STEP),
+                    52,
+                    268
+                ),
                 y: this._clampValue(obstacle.y + ((index + obstacleIndex) % 3) * 8, 120, 330)
             }));
 
@@ -419,7 +431,7 @@ class KorokoroReflect {
                 label: 'tool-star',
                 render: { fillStyle: '#fbbf24', strokeStyle: '#d97706', lineWidth: 1 }
             }, true);
-            return Array.isArray(starBody) ? starBody[0] : starBody;
+            return this._firstBody(starBody);
         }
 
         return null;
@@ -511,6 +523,10 @@ class KorokoroReflect {
 
     _clampValue(value, min, max) {
         return Math.min(max, Math.max(min, value));
+    }
+
+    _firstBody(body) {
+        return Array.isArray(body) ? body[0] : body;
     }
 
     _rotateSelected() {
