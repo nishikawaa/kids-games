@@ -1,5 +1,5 @@
 class KorokoroReflect {
-    constructor() {
+    constructor(options = {}) {
         this.RESIZE_THRESHOLD = 4;
         this.ROTATION_INCREMENT = Math.PI / 12;
         this.STUCK_MIN_SPEED = 0.08;
@@ -131,11 +131,19 @@ class KorokoroReflect {
 
         this.render = null;
         this.world = this.engine.world;
-        const generatedStageDefinitions = this._buildStageDefinitions(this.STAGE_TOTAL, {});
-        this.stageDefinitionOverrides = this._buildStageDefinitionOverrides(this.STAGE_TOTAL, generatedStageDefinitions);
-        this.stages = this._buildStages(generatedStageDefinitions.map((definition, index) => (
-            this._mergeStageDefinition(definition, this.stageDefinitionOverrides[index + 1], index + 1)
-        )));
+        const providedStageDefinitions = this._areValidExternalStageDefinitions(options.stageDefinitions)
+            ? options.stageDefinitions
+            : null;
+        if (providedStageDefinitions) {
+            this.stageDefinitionOverrides = {};
+            this.stages = this._buildStages(providedStageDefinitions);
+        } else {
+            const generatedStageDefinitions = this._buildStageDefinitions(this.STAGE_TOTAL, {});
+            this.stageDefinitionOverrides = this._buildStageDefinitionOverrides(this.STAGE_TOTAL, generatedStageDefinitions);
+            this.stages = this._buildStages(generatedStageDefinitions.map((definition, index) => (
+                this._mergeStageDefinition(definition, this.stageDefinitionOverrides[index + 1], index + 1)
+            )));
+        }
         this.stageIndex = 0;
         this.unlockedStageCount = this._loadUnlockedStageCount();
         this.stageButtons = [];
@@ -655,6 +663,10 @@ class KorokoroReflect {
             availableTools: [...(definition.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS)],
             obstacles: (definition.obstacles ?? []).map((obstacle) => ({ ...obstacle }))
         }));
+    }
+
+    _areValidExternalStageDefinitions(stageDefinitions) {
+        return Array.isArray(stageDefinitions) && stageDefinitions.length === this.STAGE_TOTAL;
     }
 
     _createStageObstacleVariant(obstacle, stageIndex, obstacleIndex, level) {
@@ -1721,11 +1733,27 @@ class KorokoroReflect {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     if (!window.Matter) {
         const stageText = document.getElementById('stageText');
         if (stageText) stageText.textContent = '読み込みに失敗しました。再読み込みしてください。';
         return;
     }
-    new KorokoroReflect();
+    let stageDefinitions = null;
+    try {
+        const response = await fetch(`${window.__assetBase || ''}stages.json`, { cache: 'no-store' });
+        if (!response.ok) {
+            throw new Error(`Failed to fetch stage definitions: ${response.status}`);
+        }
+        const data = await response.json();
+        if (Array.isArray(data) && data.length === 100) {
+            stageDefinitions = data;
+        } else {
+            throw new Error('Invalid stage definitions format');
+        }
+    } catch (error) {
+        console.warn('Using built-in stage definitions because stages.json could not be loaded.', error);
+    }
+
+    new KorokoroReflect({ stageDefinitions });
 });
