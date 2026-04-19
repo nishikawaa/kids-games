@@ -5,28 +5,41 @@ class KorokoroReflect {
         this.STUCK_MIN_SPEED = 0.08;
         this.STUCK_CHECK_HEIGHT_RATIO = 0.68;
         this.STUCK_MAX_FRAMES = 140;
+
         this.BLOCK_WIDTH = 96;
         this.BLOCK_HEIGHT = 18;
         this.BLOCK_MOVE_MARGIN = 20;
+        this.CIRCLE_TOOL_RADIUS = 24;
+        this.STAR_TOOL_OUTER_RADIUS = 24;
+        this.STAR_TOOL_INNER_RADIUS = 11;
+
         this.STAGE_BASE_WIDTH = 320;
         this.STAGE_BASE_HEIGHT = 420;
         this.BALL_RADIUS = 14;
         this.SPAWN_GUIDE_RADIUS = 18;
 
         this.stageText = document.getElementById('stageText');
-        this.starText = document.getElementById('starText');
-        this.stateText = document.getElementById('stateText');
         this.messageText = document.getElementById('messageText');
         this.stockText = document.getElementById('stockText');
 
         this.playArea = document.getElementById('playArea');
         this.startBtn = document.getElementById('startBtn');
         this.resetBtn = document.getElementById('resetBtn');
-        this.pauseBtn = document.getElementById('pauseBtn');
         this.nextBtn = document.getElementById('nextBtn');
         this.rotateBtn = document.getElementById('rotateBtn');
         this.deleteBtn = document.getElementById('deleteBtn');
+
         this.selectRectBtn = document.getElementById('selectRectBtn');
+        this.selectCircleBtn = document.getElementById('selectCircleBtn');
+        this.selectStarBtn = document.getElementById('selectStarBtn');
+
+        this.stageListBtn = document.getElementById('stageListBtn');
+        this.helpBtn = document.getElementById('helpBtn');
+        this.stageSelectModal = document.getElementById('stageSelectModal');
+        this.stageList = document.getElementById('stageList');
+        this.closeStageListBtn = document.getElementById('closeStageListBtn');
+        this.helpModal = document.getElementById('helpModal');
+        this.closeHelpBtn = document.getElementById('closeHelpBtn');
 
         this.Matter = window.Matter;
         this.engine = this.Matter.Engine.create();
@@ -35,8 +48,9 @@ class KorokoroReflect {
 
         this.render = null;
         this.world = this.engine.world;
+        this.stages = this._buildStages(100);
         this.stageIndex = 0;
-        this.clearCount = 0;
+
         this.selectedTool = 'rect';
         this.selectedBlock = null;
         this.placedBlocks = [];
@@ -44,15 +58,26 @@ class KorokoroReflect {
         this.goalSensor = null;
         this.spawnGuide = null;
         this.ball = null;
+
         this.isStarted = false;
-        this.isPaused = false;
         this.isCleared = false;
         this.draggingBlock = null;
         this.stuckFrames = 0;
-        this.rafId = null;
 
-        this.stages = [
-            // obstacle angle values are radians
+        this._initRenderer();
+        this._bindEvents();
+        this._registerCollision();
+        this._renderStageListButtons();
+        this._loadStage(0);
+
+        this.Matter.Runner.run(this.runner, this.engine);
+        this._tick();
+
+        this._showHelpIfFirstTime();
+    }
+
+    _buildStages(total) {
+        const baseStages = [
             {
                 spawn: { x: 70, y: 36 },
                 goal: { x: 270, y: 390, r: 24 },
@@ -78,13 +103,34 @@ class KorokoroReflect {
             }
         ];
 
-        this._initRenderer();
-        this._bindEvents();
-        this._registerCollision();
-        this._loadStage(0);
+        return Array.from({ length: total }, (_, index) => {
+            const template = baseStages[index % baseStages.length];
+            const offset = ((index * 17) % 70) - 35;
+            const level = Math.floor(index / 20);
 
-        this.Matter.Runner.run(this.runner, this.engine);
-        this._tick();
+            const spawn = {
+                x: this._clampValue(template.spawn.x + offset * 0.75, 34, 286),
+                y: this._clampValue(template.spawn.y + (index % 4), 32, 84)
+            };
+            const goal = {
+                x: this._clampValue(template.goal.x - offset * 0.8, 34, 286),
+                y: this._clampValue(template.goal.y - (index % 5) * 4, 300, 398),
+                r: template.goal.r
+            };
+
+            const obstacles = template.obstacles.map((obstacle, obstacleIndex) => ({
+                ...obstacle,
+                x: this._clampValue(obstacle.x + offset * (0.4 + obstacleIndex * 0.1), 52, 268),
+                y: this._clampValue(obstacle.y + ((index + obstacleIndex) % 3) * 8, 120, 330)
+            }));
+
+            return {
+                spawn,
+                goal,
+                maxBlocks: Math.min(4, template.maxBlocks + level),
+                obstacles
+            };
+        });
     }
 
     _initRenderer() {
@@ -111,18 +157,65 @@ class KorokoroReflect {
     _bindEvents() {
         this.startBtn.addEventListener('click', () => this._startBall());
         this.resetBtn.addEventListener('click', () => this._loadStage(this.stageIndex));
-        this.pauseBtn.addEventListener('click', () => this._togglePause());
         this.nextBtn.addEventListener('click', () => this._onNextStage());
         this.rotateBtn.addEventListener('click', () => this._rotateSelected());
         this.deleteBtn.addEventListener('click', () => this._deleteSelected());
-        this.selectRectBtn.addEventListener('click', () => this._setTool('rect'));
 
-        this.playArea.addEventListener('pointerdown', (e) => this._onPointerDown(e));
-        this.playArea.addEventListener('pointermove', (e) => this._onPointerMove(e));
-        this.playArea.addEventListener('pointerup', (e) => this._onPointerUp(e));
-        this.playArea.addEventListener('pointercancel', (e) => this._onPointerUp(e));
+        this.selectRectBtn.addEventListener('click', () => this._setTool('rect'));
+        this.selectCircleBtn.addEventListener('click', () => this._setTool('circle'));
+        this.selectStarBtn.addEventListener('click', () => this._setTool('star'));
+
+        this.stageListBtn.addEventListener('click', () => this._toggleModal(this.stageSelectModal, true));
+        this.closeStageListBtn.addEventListener('click', () => this._toggleModal(this.stageSelectModal, false));
+        this.helpBtn.addEventListener('click', () => this._toggleModal(this.helpModal, true));
+        this.closeHelpBtn.addEventListener('click', () => this._closeHelp());
+
+        this.stageSelectModal.addEventListener('click', (event) => {
+            if (event.target === this.stageSelectModal) this._toggleModal(this.stageSelectModal, false);
+        });
+        this.helpModal.addEventListener('click', (event) => {
+            if (event.target === this.helpModal) this._closeHelp();
+        });
+
+        this.playArea.addEventListener('pointerdown', (event) => this._onPointerDown(event));
+        this.playArea.addEventListener('pointermove', (event) => this._onPointerMove(event));
+        this.playArea.addEventListener('pointerup', (event) => this._onPointerUp(event));
+        this.playArea.addEventListener('pointercancel', (event) => this._onPointerUp(event));
 
         window.addEventListener('resize', () => this._resizeAndReload());
+    }
+
+    _renderStageListButtons() {
+        const fragment = document.createDocumentFragment();
+        this.stages.forEach((_, index) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'stage-item';
+            button.textContent = String(index + 1);
+            button.addEventListener('click', () => {
+                this._toggleModal(this.stageSelectModal, false);
+                this._loadStage(index);
+            });
+            fragment.appendChild(button);
+        });
+        this.stageList.appendChild(fragment);
+    }
+
+    _showHelpIfFirstTime() {
+        const key = 'korokoroReflectHelpSeenV1';
+        if (!localStorage.getItem(key)) {
+            this._toggleModal(this.helpModal, true);
+        }
+    }
+
+    _closeHelp() {
+        localStorage.setItem('korokoroReflectHelpSeenV1', '1');
+        this._toggleModal(this.helpModal, false);
+    }
+
+    _toggleModal(modal, visible) {
+        modal.classList.toggle('hidden', !visible);
+        modal.setAttribute('aria-hidden', visible ? 'false' : 'true');
     }
 
     _resizeAndReload() {
@@ -146,14 +239,15 @@ class KorokoroReflect {
     _setTool(tool) {
         this.selectedTool = tool;
         this.selectRectBtn.classList.toggle('active', tool === 'rect');
+        this.selectCircleBtn.classList.toggle('active', tool === 'circle');
+        this.selectStarBtn.classList.toggle('active', tool === 'star');
     }
 
     _loadStage(index) {
-        const wasPaused = this.isPaused;
         this.stageIndex = index;
         this.stage = this.stages[index];
+
         this.isStarted = false;
-        this.isPaused = false;
         this.isCleared = false;
         this.ball = null;
         this.selectedBlock = null;
@@ -168,21 +262,22 @@ class KorokoroReflect {
         this._buildGoal();
         this._buildObstacles();
         this._buildSpawnGuide();
-        if (wasPaused) {
-            this.Matter.Runner.run(this.runner, this.engine);
-        }
 
         this.stageText.textContent = `ステージ ${this.stageIndex + 1} / ${this.stages.length}`;
-        this.stateText.textContent = '配置中';
-        this.messageText.textContent = '赤い輪がスタート、緑の円がゴールだよ。ブロックを置いて「スタート」を押そう！';
-
+        this.messageText.textContent = '赤い輪がスタート、緑の円がゴール。下の形を置いてスタートしよう！';
         this.startBtn.disabled = false;
-        this.pauseBtn.disabled = true;
-        this.pauseBtn.textContent = '一時停止';
         this.nextBtn.disabled = true;
 
         this._updateBlockStock();
         this._syncSelectionUI();
+        this._syncStageListHighlight();
+    }
+
+    _syncStageListHighlight() {
+        const buttons = this.stageList.querySelectorAll('.stage-item');
+        buttons.forEach((button, index) => {
+            button.classList.toggle('active', index === this.stageIndex);
+        });
     }
 
     _buildWalls() {
@@ -209,9 +304,8 @@ class KorokoroReflect {
     }
 
     _buildGoal() {
-        const g = this.stage.goal;
-        const scaledGoalPoint = this._scaledStagePoint(g);
-        const scaledRadius = this._scaledStageRadius(g.r, this.BALL_RADIUS);
+        const scaledGoalPoint = this._scaledStagePoint(this.stage.goal);
+        const scaledRadius = this._scaledStageRadius(this.stage.goal.r, this.BALL_RADIUS);
         const safePoint = this._clampCircleCenter(scaledGoalPoint, scaledRadius);
         this.goalSensor = this.Matter.Bodies.circle(safePoint.x, safePoint.y, scaledRadius, {
             isStatic: true,
@@ -223,11 +317,14 @@ class KorokoroReflect {
     }
 
     _buildObstacles() {
-        this.stage.obstacles.forEach((obs) => {
-            if (obs.type !== 'rect') return;
-            const body = this.Matter.Bodies.rectangle(obs.x, obs.y, obs.w, obs.h, {
+        this.stage.obstacles.forEach((obstacle) => {
+            if (obstacle.type !== 'rect') return;
+            const point = this._scaledStagePoint(obstacle);
+            const width = (obstacle.w / this.STAGE_BASE_WIDTH) * this.width;
+            const height = (obstacle.h / this.STAGE_BASE_HEIGHT) * this.height;
+            const body = this.Matter.Bodies.rectangle(point.x, point.y, width, height, {
                 isStatic: true,
-                angle: obs.angle || 0,
+                angle: obstacle.angle || 0,
                 restitution: 0.9,
                 friction: 0.1,
                 render: { fillStyle: '#f59e0b' }
@@ -252,9 +349,11 @@ class KorokoroReflect {
 
     _onPointerDown(event) {
         if (event.cancelable) event.preventDefault();
-        if (this.isStarted || this.isPaused) return;
+        if (this.isStarted) return;
+
         const point = this._eventToWorldPoint(event);
         if (!point) return;
+
         if (typeof event.pointerId === 'number') {
             this.playArea.setPointerCapture(event.pointerId);
         }
@@ -267,34 +366,88 @@ class KorokoroReflect {
             return;
         }
 
-        if (this.selectedTool !== 'rect') return;
         if (this.placedBlocks.length >= this.stage.maxBlocks) {
             this.messageText.textContent = 'これ以上は置けないよ！';
             return;
         }
 
-        const safePoint = this._clampBlockPosition(point);
-        const block = this.Matter.Bodies.rectangle(safePoint.x, safePoint.y, this.BLOCK_WIDTH, this.BLOCK_HEIGHT, {
-            isStatic: true,
-            restitution: 0.92,
-            friction: 0.04,
-            render: { fillStyle: '#60a5fa', strokeStyle: '#2563eb', lineWidth: 1 }
-        });
-        this.placedBlocks.push(block);
-        this.Matter.World.add(this.world, block);
-        this.selectedBlock = block;
+        const body = this._createToolBody(this.selectedTool, point);
+        if (!body) return;
+
+        this.placedBlocks.push(body);
+        this.Matter.World.add(this.world, body);
+        this.selectedBlock = body;
 
         this._syncSelectionUI();
         this._updateBlockStock();
     }
 
+    _createToolBody(tool, point) {
+        const options = {
+            isStatic: true,
+            restitution: 0.92,
+            friction: 0.04
+        };
+
+        if (tool === 'rect') {
+            const safePoint = this._clampPointWithHalfExtents(
+                point,
+                this.BLOCK_WIDTH / 2,
+                this.BLOCK_HEIGHT / 2
+            );
+            return this.Matter.Bodies.rectangle(safePoint.x, safePoint.y, this.BLOCK_WIDTH, this.BLOCK_HEIGHT, {
+                ...options,
+                label: 'tool-rect',
+                render: { fillStyle: '#60a5fa', strokeStyle: '#2563eb', lineWidth: 1 }
+            });
+        }
+
+        if (tool === 'circle') {
+            const safePoint = this._clampCircleCenter(point, this.CIRCLE_TOOL_RADIUS);
+            return this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.CIRCLE_TOOL_RADIUS, {
+                ...options,
+                label: 'tool-circle',
+                render: { fillStyle: '#38bdf8', strokeStyle: '#0284c7', lineWidth: 1 }
+            });
+        }
+
+        if (tool === 'star') {
+            const safePoint = this._clampCircleCenter(point, this.STAR_TOOL_OUTER_RADIUS);
+            const vertices = this._createStarVertices(this.STAR_TOOL_OUTER_RADIUS, this.STAR_TOOL_INNER_RADIUS, 5);
+            const starBody = this.Matter.Bodies.fromVertices(safePoint.x, safePoint.y, [vertices], {
+                ...options,
+                label: 'tool-star',
+                render: { fillStyle: '#fbbf24', strokeStyle: '#d97706', lineWidth: 1 }
+            }, true);
+            return Array.isArray(starBody) ? starBody[0] : starBody;
+        }
+
+        return null;
+    }
+
+    _createStarVertices(outerRadius, innerRadius, points) {
+        const vertices = [];
+        const step = Math.PI / points;
+        for (let index = 0; index < points * 2; index += 1) {
+            const radius = index % 2 === 0 ? outerRadius : innerRadius;
+            const angle = index * step - Math.PI / 2;
+            vertices.push({
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius
+            });
+        }
+        return vertices;
+    }
+
     _onPointerMove(event) {
         if (event.cancelable) event.preventDefault();
-        if (!this.draggingBlock || this.isStarted || this.isPaused) return;
+        if (!this.draggingBlock || this.isStarted) return;
+
         const point = this._eventToWorldPoint(event);
         if (!point) return;
 
-        this.Matter.Body.setPosition(this.draggingBlock, this._clampBlockPosition(point));
+        const safePoint = this._clampBodyPosition(this.draggingBlock, point);
+        this.Matter.Body.setPosition(this.draggingBlock, safePoint);
     }
 
     _onPointerUp(event) {
@@ -311,18 +464,27 @@ class KorokoroReflect {
     _eventToWorldPoint(event) {
         const rect = this.playArea.getBoundingClientRect();
         if (!rect.width || !rect.height) return null;
+
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
         if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
+
         return { x, y };
     }
 
-    _clampBlockPosition(point) {
-        const marginX = Math.max(this.BLOCK_MOVE_MARGIN, this.BLOCK_WIDTH / 2);
-        const marginY = Math.max(this.BLOCK_MOVE_MARGIN, this.BLOCK_HEIGHT / 2);
-        const x = Math.min(this.width - marginX, Math.max(marginX, point.x));
-        const y = Math.min(this.height - marginY, Math.max(marginY, point.y));
-        return { x, y };
+    _clampPointWithHalfExtents(point, halfWidth, halfHeight) {
+        const marginX = Math.max(this.BLOCK_MOVE_MARGIN, halfWidth);
+        const marginY = Math.max(this.BLOCK_MOVE_MARGIN, halfHeight);
+        return {
+            x: Math.min(this.width - marginX, Math.max(marginX, point.x)),
+            y: Math.min(this.height - marginY, Math.max(marginY, point.y))
+        };
+    }
+
+    _clampBodyPosition(body, point) {
+        const width = body.bounds.max.x - body.bounds.min.x;
+        const height = body.bounds.max.y - body.bounds.min.y;
+        return this._clampPointWithHalfExtents(point, width / 2, height / 2);
     }
 
     _scaledStagePoint(point) {
@@ -347,6 +509,10 @@ class KorokoroReflect {
         };
     }
 
+    _clampValue(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+    }
+
     _rotateSelected() {
         if (this.isStarted || !this.selectedBlock) return;
         this.Matter.Body.rotate(this.selectedBlock, this.ROTATION_INCREMENT);
@@ -355,7 +521,7 @@ class KorokoroReflect {
     _deleteSelected() {
         if (this.isStarted || !this.selectedBlock) return;
         this.Matter.World.remove(this.world, this.selectedBlock);
-        this.placedBlocks = this.placedBlocks.filter((b) => b !== this.selectedBlock);
+        this.placedBlocks = this.placedBlocks.filter((body) => body !== this.selectedBlock);
         this.selectedBlock = null;
         this._syncSelectionUI();
         this._updateBlockStock();
@@ -372,20 +538,20 @@ class KorokoroReflect {
                 body.render.strokeStyle = '#0f172a';
                 body.render.lineWidth = 3;
             } else {
-                body.render.strokeStyle = '#2563eb';
+                if (body.label === 'tool-rect') body.render.strokeStyle = '#2563eb';
+                if (body.label === 'tool-circle') body.render.strokeStyle = '#0284c7';
+                if (body.label === 'tool-star') body.render.strokeStyle = '#d97706';
                 body.render.lineWidth = 1;
             }
         });
     }
 
     _startBall() {
-        if (this.isStarted || this.isPaused) return;
+        if (this.isStarted) return;
 
         this.isStarted = true;
-        this.stateText.textContent = 'プレイ中';
         this.messageText.textContent = 'ボールをゴールへ導こう！';
         this.startBtn.disabled = true;
-        this.pauseBtn.disabled = false;
 
         this.engine.gravity.y = 1.02;
         const safeSpawn = this._clampCircleCenter(this._scaledStagePoint(this.stage.spawn), this.BALL_RADIUS);
@@ -398,20 +564,6 @@ class KorokoroReflect {
             render: { fillStyle: '#ef4444' }
         });
         this.Matter.World.add(this.world, this.ball);
-    }
-
-    _togglePause() {
-        if (!this.isStarted || this.isCleared) return;
-        this.isPaused = !this.isPaused;
-        if (this.isPaused) {
-            this.Matter.Runner.stop(this.runner);
-            this.stateText.textContent = '一時停止';
-            this.pauseBtn.textContent = '再開';
-        } else {
-            this.Matter.Runner.run(this.runner, this.engine);
-            this.stateText.textContent = 'プレイ中';
-            this.pauseBtn.textContent = '一時停止';
-        }
     }
 
     _registerCollision() {
@@ -431,24 +583,15 @@ class KorokoroReflect {
         this.isCleared = true;
         this.isStarted = false;
         this.engine.gravity.y = 0;
-        this.pauseBtn.disabled = true;
-        this.pauseBtn.textContent = '一時停止';
-        this.stateText.textContent = 'クリア！';
         this.messageText.textContent = 'やったね！ゴール成功！';
         this.nextBtn.disabled = this.stageIndex >= this.stages.length - 1;
         this.startBtn.disabled = true;
-
-        this.clearCount = Math.max(this.clearCount, this.stageIndex + 1);
-        this.starText.textContent = `⭐ ${this.clearCount}`;
     }
 
     _onFail(reasonText) {
         this.isStarted = false;
         this.engine.gravity.y = 0;
-        this.pauseBtn.disabled = true;
-        this.pauseBtn.textContent = '一時停止';
         this.startBtn.disabled = false;
-        this.stateText.textContent = 'しっぱい';
         this.messageText.textContent = reasonText;
 
         if (this.ball) {
@@ -466,7 +609,7 @@ class KorokoroReflect {
     }
 
     _tick() {
-        if (this.isStarted && !this.isPaused && this.ball) {
+        if (this.isStarted && this.ball) {
             const speed = this.ball.speed || 0;
             const y = this.ball.position.y;
 
@@ -482,7 +625,7 @@ class KorokoroReflect {
             }
         }
 
-        this.rafId = requestAnimationFrame(() => this._tick());
+        requestAnimationFrame(() => this._tick());
     }
 }
 

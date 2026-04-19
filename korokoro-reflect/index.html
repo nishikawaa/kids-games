@@ -19,24 +19,36 @@
         <header class="game-header">
             <h1>🧩 ころころリフレクト</h1>
             <div class="status-row">
-                <span id="stageText">ステージ 1 / 3</span>
-                <span id="starText">⭐ 0</span>
-                <span id="stateText">配置中</span>
+                <span id="stageText">ステージ 1 / 100</span>
             </div>
             <div class="header-buttons">
                 <button id="resetBtn" class="secondary">リセット</button>
-                <button id="pauseBtn" class="secondary" disabled>一時停止</button>
+                <button id="stageListBtn" class="secondary">ステージ一覧</button>
+                <button id="helpBtn" class="secondary">あそび方</button>
             </div>
         </header>
 
         <main>
             <div id="playArea" class="play-area"></div>
-            <p id="messageText" class="message">下の「四角」を選んで、プレイエリアをタップして置こう！</p>
+            <p id="messageText" class="message">赤い輪がスタート、緑の円がゴール。下の形を置いてスタートしよう！</p>
         </main>
 
         <footer class="toolbox">
-            <div class="tool-row">
-                <button id="selectRectBtn" class="tool-btn active">四角</button>
+            <div class="tool-row tool-select-row">
+                <button id="selectRectBtn" class="tool-btn active">
+                    <span class="tool-icon rect-icon" aria-hidden="true"></span>
+                    <span>四角</span>
+                </button>
+                <button id="selectCircleBtn" class="tool-btn">
+                    <span class="tool-icon circle-icon" aria-hidden="true"></span>
+                    <span>丸</span>
+                </button>
+                <button id="selectStarBtn" class="tool-btn">
+                    <span class="tool-icon star-icon" aria-hidden="true"></span>
+                    <span>星</span>
+                </button>
+            </div>
+            <div class="tool-row stock-row">
                 <span id="stockText">のこり: 1</span>
             </div>
             <div class="tool-row">
@@ -48,6 +60,27 @@
                 <button id="nextBtn" class="primary" disabled>つぎのステージ</button>
             </div>
         </footer>
+
+        <section id="stageSelectModal" class="overlay hidden" aria-hidden="true">
+            <div class="overlay-card">
+                <h2>ステージ一覧</h2>
+                <div id="stageList" class="stage-list"></div>
+                <button id="closeStageListBtn" class="secondary">閉じる</button>
+            </div>
+        </section>
+
+        <section id="helpModal" class="overlay hidden" aria-hidden="true">
+            <div class="overlay-card">
+                <h2>あそび方</h2>
+                <ol class="help-list">
+                    <li>下のボタンで「四角・丸・星」を選びます。</li>
+                    <li>プレイエリアをタップしてブロックを置きます（ドラッグで移動可能）。</li>
+                    <li>回転や削除で配置を調整し、スタートを押します。</li>
+                    <li>赤い輪からボールが出て、緑の円に入るとクリアです。</li>
+                </ol>
+                <button id="closeHelpBtn" class="primary">OK</button>
+            </div>
+        </section>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
