@@ -704,11 +704,12 @@ class KorokoroReflect {
             return;
         }
 
-        const minDrop = ['left', 'right'].includes(spawnDirection)
+        const isHorizontalSpawn = this._isHorizontalSpawnDirection(spawnDirection);
+        const minDrop = isHorizontalSpawn
             ? this.REACHABLE_GOAL_MIN_DROP - this.HORIZONTAL_SPAWN_DROP_ADJUSTMENT
             : this.REACHABLE_GOAL_MIN_DROP;
         const horizontalSpawnYCap = this.STAGE_BASE_HEIGHT * this.HORIZONTAL_SPAWN_MAX_Y_RATIO;
-        const maxReachableSpawnY = ['left', 'right'].includes(spawnDirection)
+        const maxReachableSpawnY = isHorizontalSpawn
             ? Math.min(goal.y - minDrop, horizontalSpawnYCap)
             : goal.y - minDrop;
         const minStageY = this.STAGE_BOUNDARY_MARGIN;
@@ -728,6 +729,10 @@ class KorokoroReflect {
             return this.DEFAULT_SPAWN_DIRECTION;
         }
         return goalX < spawnX ? 'left' : 'right';
+    }
+
+    _isHorizontalSpawnDirection(direction) {
+        return direction === 'left' || direction === 'right';
     }
 
     _areValidExternalStageDefinitions(stageDefinitions) {
