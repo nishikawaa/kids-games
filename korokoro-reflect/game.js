@@ -50,7 +50,6 @@ class KorokoroReflect {
         this.STUCK_BADGE_DURATION = 4300;
         this.MIN_REQUIRED_BLOCKS = 1;
         this.DEFAULT_AVAILABLE_TOOLS = ['rect'];
-        this.DEFAULT_AVAILABLE_TOOLS = ['rect'];
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
         this.BLOCK_TAP_MOVE_THRESHOLD = 9;
         this.BLOCK_TAP_MOVE_THRESHOLD_SQUARED = this.BLOCK_TAP_MOVE_THRESHOLD * this.BLOCK_TAP_MOVE_THRESHOLD;
