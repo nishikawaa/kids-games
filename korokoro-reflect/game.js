@@ -114,7 +114,7 @@ class KorokoroReflect {
         this.stuckFrames = 0;
         this.fxTimerId = null;
         this.blockPointerState = null;
-        this.clearActionLockedButtons = [];
+        this.clearActionDisabledState = new Map();
         this._onDocumentPointerDown = (event) => {
             if (!this.menuPanel || !this.menuBtn || this.menuPanel.classList.contains('hidden')) return;
             if (this.menuPanel.contains(event.target) || this.menuBtn.contains(event.target)) return;
@@ -383,20 +383,17 @@ class KorokoroReflect {
         ].filter(Boolean);
 
         if (locked) {
-            this.clearActionLockedButtons = controls;
             controls.forEach((control) => {
-                control.dataset.clearPrevDisabled = control.disabled ? '1' : '0';
+                this.clearActionDisabledState.set(control, control.disabled);
                 control.disabled = true;
             });
             return;
         }
 
-        this.clearActionLockedButtons.forEach((control) => {
-            const prevDisabled = control.dataset.clearPrevDisabled === '1';
+        this.clearActionDisabledState.forEach((prevDisabled, control) => {
             control.disabled = prevDisabled;
-            delete control.dataset.clearPrevDisabled;
         });
-        this.clearActionLockedButtons = [];
+        this.clearActionDisabledState.clear();
     }
 
     _loadUnlockedStageCount() {
@@ -1052,7 +1049,6 @@ class KorokoroReflect {
     }
 
     _setNextButtonReady(isReady) {
-        if (!this.nextBtn) return;
         const canAdvance = isReady && this.stageIndex < this.stages.length - 1;
         this.nextBtn.disabled = !canAdvance;
         this.nextBtn.classList.toggle('ready', canAdvance);
