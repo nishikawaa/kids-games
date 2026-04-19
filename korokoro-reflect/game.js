@@ -27,6 +27,8 @@ class KorokoroReflect {
         this.OBSTACLE_SHIFT_STEP = 0.1;
         this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
         this.STAGE_TOTAL = 100;
+        this.BLOCKS_DECREASE_INTERVAL = 6;
+        this.MAX_EXTRA_OBSTACLES = 3;
         this.STAR_TEXTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E";
 
         this.stageText = document.getElementById('stageText');
@@ -146,7 +148,7 @@ class KorokoroReflect {
             return {
                 spawn,
                 goal,
-                maxBlocks: Math.max(1, template.maxBlocks - Math.floor(level / 6)),
+                maxBlocks: Math.max(1, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
                 obstacles: [...obstacles, ...extraObstacles]
             };
         });
@@ -155,7 +157,7 @@ class KorokoroReflect {
     _buildDifficultyObstacles(level, offset) {
         if (level <= 0) return [];
         const obstacles = [];
-        const count = Math.min(3, level);
+        const count = Math.min(this.MAX_EXTRA_OBSTACLES, level);
         for (let index = 0; index < count; index += 1) {
             obstacles.push({
                 type: 'rect',
@@ -230,7 +232,10 @@ class KorokoroReflect {
             button.textContent = String(stageIndex + 1);
             button.setAttribute('aria-label', `ステージ ${stageIndex + 1}`);
             button.addEventListener('click', () => {
-                if (stageIndex + 1 > this.unlockedStageCount) return;
+                if (stageIndex + 1 > this.unlockedStageCount) {
+                    this._showFxBadge('前のステージをクリアしてね', 'fail', 1100);
+                    return;
+                }
                 this._toggleModal(this.stageSelectModal, false);
                 this._loadStage(stageIndex);
             });
@@ -711,7 +716,10 @@ class KorokoroReflect {
             this._showFxBadge('ぜんぶクリア！', 'clear', 1500);
             return;
         }
-        if (this.stageIndex + 2 > this.unlockedStageCount) return;
+        if (this.stageIndex + 2 > this.unlockedStageCount) {
+            this._showFxBadge('先にいまのステージをクリアしよう！', 'fail', 1100);
+            return;
+        }
         this._loadStage(this.stageIndex + 1);
     }
 
