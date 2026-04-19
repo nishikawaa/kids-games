@@ -17,14 +17,7 @@ class KorokoroReflect {
         this.STAGE_BASE_HEIGHT = 420;
         this.BALL_RADIUS = 14;
         this.SPAWN_GUIDE_RADIUS = 18;
-        this.STAGE_VARIATION_STEP = 17;
-        this.STAGE_VARIATION_SPAN = 70;
-        this.STAGE_VARIATION_CENTER = 35;
         this.STAGE_LEVEL_STEP = 20;
-        this.SPAWN_SHIFT_RATE = 0.75;
-        this.GOAL_SHIFT_RATE = 0.8;
-        this.OBSTACLE_SHIFT_BASE = 0.4;
-        this.OBSTACLE_SHIFT_STEP = 0.1;
         this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
         this.STAGE_TOTAL = 100;
         this.CIRCLE_UNLOCK_STAGE = 4;
@@ -33,8 +26,12 @@ class KorokoroReflect {
         this.MAX_EXTRA_OBSTACLES = 3;
         this.MIN_BLOCKS_PER_STAGE = 1;
         this.MIN_GOAL_RADIUS = 14;
+        this.MIN_OBSTACLE_RADIUS = 9;
+        this.MIN_OBSTACLE_INNER_RADIUS = 4;
         this.STAR_PHYSICS_RADIUS_SCALE = 0.8;
         this.STAR_SPRITE_SCALE = 0.4;
+        this.SPAWN_SPEED_HORIZONTAL = 2.6;
+        this.SPAWN_SPEED_VERTICAL = 2.2;
         this.DIFFICULTY_BASE_OBSTACLE_WIDTH = 94;
         this.DIFFICULTY_OBSTACLE_WIDTH_STEP = 3;
         this.DIFFICULTY_MIN_OBSTACLE_WIDTH = 56;
@@ -91,7 +88,8 @@ class KorokoroReflect {
 
         this.render = null;
         this.world = this.engine.world;
-        this.stages = this._buildStages(this.STAGE_TOTAL);
+        this.stageDefinitions = this._buildStageDefinitions(this.STAGE_TOTAL);
+        this.stages = this._buildStages(this.stageDefinitions);
         this.stageIndex = 0;
         this.unlockedStageCount = this._loadUnlockedStageCount();
         this.stageButtons = [];
@@ -139,16 +137,18 @@ class KorokoroReflect {
         this._initToolDragGhost();
     }
 
-    _buildStages(total) {
-        const baseStages = [
+    _buildStageDefinitions(total) {
+        const templates = [
             {
                 spawn: { x: 70, y: 36 },
+                spawnDirection: 'down',
                 goal: { x: 270, y: 390, r: 24 },
                 maxBlocks: 1,
                 obstacles: []
             },
             {
                 spawn: { x: 250, y: 40 },
+                spawnDirection: 'down',
                 goal: { x: 66, y: 390, r: 24 },
                 maxBlocks: 2,
                 obstacles: [
@@ -156,76 +156,168 @@ class KorokoroReflect {
                 ]
             },
             {
-                spawn: { x: 80, y: 38 },
-                goal: { x: 250, y: 360, r: 24 },
+                spawn: { x: 26, y: 170 },
+                spawnDirection: 'right',
+                goal: { x: 280, y: 338, r: 22 },
                 maxBlocks: 2,
                 obstacles: [
-                    { type: 'rect', x: 110, y: 230, w: 90, h: 16, angle: 0.36 },
-                    { type: 'rect', x: 220, y: 170, w: 84, h: 16, angle: -0.28 }
+                    { type: 'circle', x: 142, y: 222, r: 20 },
+                    { type: 'rect', x: 222, y: 142, w: 84, h: 14, angle: 0.26 }
+                ]
+            },
+            {
+                spawn: { x: 296, y: 186 },
+                spawnDirection: 'left',
+                goal: { x: 42, y: 338, r: 22 },
+                maxBlocks: 2,
+                obstacles: [
+                    { type: 'star', x: 166, y: 188, outerR: 24, innerR: 10, angle: 0.24 },
+                    { type: 'rect', x: 102, y: 140, w: 74, h: 14, angle: -0.32 }
+                ]
+            },
+            {
+                spawn: { x: 162, y: 396 },
+                spawnDirection: 'up',
+                goal: { x: 58, y: 44, r: 22 },
+                maxBlocks: 2,
+                obstacles: [
+                    { type: 'circle', x: 92, y: 268, r: 18 },
+                    { type: 'star', x: 236, y: 236, outerR: 22, innerR: 9, angle: -0.2 }
                 ]
             }
         ];
 
         return Array.from({ length: total }, (_, index) => {
-            const template = baseStages[index % baseStages.length];
-            const offset = this._calculateStageOffset(index);
+            const template = templates[index % templates.length];
+            const variationStep = ((index * 17) % 70) - 35;
             const level = Math.floor(index / this.STAGE_LEVEL_STEP);
-
-            const spawn = {
-                x: this._clampValue(template.spawn.x + offset * this.SPAWN_SHIFT_RATE, 34, 286),
-                y: this._clampValue(template.spawn.y + (index % 4), 32, 84)
-            };
-            const goal = {
-                x: this._clampValue(template.goal.x - offset * this.GOAL_SHIFT_RATE, 34, 286),
-                y: this._clampValue(template.goal.y - (index % 5) * 4, 300, 398),
-                r: Math.max(this.MIN_GOAL_RADIUS, template.goal.r - level)
-            };
-
-            const obstacles = template.obstacles.map((obstacle, obstacleIndex) => ({
-                ...obstacle,
-                x: this._clampValue(
-                    obstacle.x + offset * (this.OBSTACLE_SHIFT_BASE + obstacleIndex * this.OBSTACLE_SHIFT_STEP),
-                    52,
-                    268
-                ),
-                y: this._clampValue(obstacle.y + ((index + obstacleIndex) % 3) * 8, 120, 330)
-            }));
-
-            const extraObstacles = this._buildDifficultyObstacles(level, offset);
             const stageNumber = index + 1;
+
             const availableTools = stageNumber < this.CIRCLE_UNLOCK_STAGE
                 ? ['rect']
                 : stageNumber < this.STAR_UNLOCK_STAGE
                     ? ['rect', 'circle']
                     : ['rect', 'circle', 'star'];
+
+            const spawn = {
+                x: this._clampValue(template.spawn.x + variationStep * 0.55, 24, 296),
+                y: this._clampValue(template.spawn.y + ((index % 5) - 2) * 5, 24, 396)
+            };
+            const goal = {
+                x: this._clampValue(template.goal.x - variationStep * 0.58, 26, 294),
+                y: this._clampValue(template.goal.y - ((index + 2) % 4) * 6, 30, 398),
+                r: Math.max(this.MIN_GOAL_RADIUS, template.goal.r - Math.floor(level / 2))
+            };
+            const obstacles = [
+                ...template.obstacles.map((obstacle, obstacleIndex) => (
+                    this._createStageObstacleVariant(obstacle, index, obstacleIndex, level)
+                )),
+                ...this._buildDifficultyObstacles(level, index)
+            ];
+
             return {
                 spawn,
+                spawnDirection: template.spawnDirection,
+                spawnSpeed: ['left', 'right'].includes(template.spawnDirection)
+                    ? this.SPAWN_SPEED_HORIZONTAL
+                    : this.SPAWN_SPEED_VERTICAL,
                 goal,
                 maxBlocks: Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
                 minRequiredBlocks: this.MIN_REQUIRED_BLOCKS,
                 availableTools,
-                obstacles: [...obstacles, ...extraObstacles]
+                obstacles
             };
         });
     }
 
-    _buildDifficultyObstacles(level, offset) {
+    _buildStages(stageDefinitions) {
+        return stageDefinitions.map((definition) => ({
+            spawn: { ...definition.spawn },
+            spawnDirection: definition.spawnDirection || 'down',
+            spawnSpeed: definition.spawnSpeed,
+            goal: { ...definition.goal },
+            maxBlocks: definition.maxBlocks,
+            minRequiredBlocks: definition.minRequiredBlocks ?? this.MIN_REQUIRED_BLOCKS,
+            availableTools: [...(definition.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS)],
+            obstacles: (definition.obstacles ?? []).map((obstacle) => ({ ...obstacle }))
+        }));
+    }
+
+    _createStageObstacleVariant(obstacle, stageIndex, obstacleIndex, level) {
+        const offset = ((stageIndex + obstacleIndex * 7) % 11) - 5;
+        const base = {
+            ...obstacle,
+            x: this._clampValue(obstacle.x + offset * 4, 24, 296),
+            y: this._clampValue(obstacle.y + ((stageIndex + obstacleIndex) % 3) * 10, 44, 396),
+            angle: (obstacle.angle || 0) + (((stageIndex + obstacleIndex) % 2 === 0 ? 1 : -1) * level * 0.01)
+        };
+
+        if (obstacle.type === 'rect') {
+            return {
+                ...base,
+                w: this._clampValue(
+                    obstacle.w - level * this.DIFFICULTY_OBSTACLE_WIDTH_STEP,
+                    this.DIFFICULTY_MIN_OBSTACLE_WIDTH,
+                    this.DIFFICULTY_MAX_OBSTACLE_WIDTH
+                ),
+                h: obstacle.h
+            };
+        }
+
+        if (obstacle.type === 'circle') {
+            return {
+                ...base,
+                r: Math.max(this.MIN_OBSTACLE_RADIUS, obstacle.r - Math.floor(level / 2))
+            };
+        }
+
+        if (obstacle.type === 'star') {
+            return {
+                ...base,
+                outerR: Math.max(this.MIN_OBSTACLE_RADIUS + 4, obstacle.outerR - Math.floor(level / 2)),
+                innerR: Math.max(this.MIN_OBSTACLE_INNER_RADIUS, obstacle.innerR - Math.floor(level / 3))
+            };
+        }
+
+        return base;
+    }
+
+    _buildDifficultyObstacles(level, stageIndex) {
         if (level <= 0) return [];
         const obstacles = [];
         const count = Math.min(this.MAX_EXTRA_OBSTACLES, level);
         for (let index = 0; index < count; index += 1) {
-            obstacles.push({
-                type: 'rect',
-                x: this._clampValue(85 + index * 85 + offset * 0.2, 56, 264),
-                y: this._clampValue(150 + index * 55, 120, 332),
-                w: this._clampValue(
-                    this.DIFFICULTY_BASE_OBSTACLE_WIDTH - level * this.DIFFICULTY_OBSTACLE_WIDTH_STEP,
-                    this.DIFFICULTY_MIN_OBSTACLE_WIDTH,
-                    this.DIFFICULTY_MAX_OBSTACLE_WIDTH
-                ),
-                h: 14,
-                angle: ((index % 2 === 0 ? 1 : -1) * 0.15) + level * 0.02
-            });
+            const shapeSelector = (stageIndex + index) % 3;
+            if (shapeSelector === 0) {
+                obstacles.push({
+                    type: 'rect',
+                    x: this._clampValue(76 + index * 92 + (stageIndex % 4) * 4, 26, 294),
+                    y: this._clampValue(146 + index * 54, 54, 394),
+                    w: this._clampValue(
+                        this.DIFFICULTY_BASE_OBSTACLE_WIDTH - level * this.DIFFICULTY_OBSTACLE_WIDTH_STEP,
+                        this.DIFFICULTY_MIN_OBSTACLE_WIDTH,
+                        this.DIFFICULTY_MAX_OBSTACLE_WIDTH
+                    ),
+                    h: 14,
+                    angle: ((index % 2 === 0 ? 1 : -1) * 0.15) + level * 0.02
+                });
+            } else if (shapeSelector === 1) {
+                obstacles.push({
+                    type: 'circle',
+                    x: this._clampValue(92 + index * 86 + (stageIndex % 3) * 6, 28, 292),
+                    y: this._clampValue(170 + index * 52, 56, 392),
+                    r: Math.max(this.MIN_OBSTACLE_RADIUS, 18 - Math.floor(level / 2))
+                });
+            } else {
+                obstacles.push({
+                    type: 'star',
+                    x: this._clampValue(102 + index * 88 + (stageIndex % 4) * 5, 30, 290),
+                    y: this._clampValue(178 + index * 50, 58, 390),
+                    outerR: Math.max(this.MIN_OBSTACLE_RADIUS + 4, 22 - Math.floor(level / 2)),
+                    innerR: Math.max(this.MIN_OBSTACLE_INNER_RADIUS, 9 - Math.floor(level / 3)),
+                    angle: (index % 2 === 0 ? 1 : -1) * 0.2
+                });
+            }
         }
         return obstacles;
     }
@@ -561,20 +653,61 @@ class KorokoroReflect {
 
     _buildObstacles() {
         this.stage.obstacles.forEach((obstacle) => {
-            if (obstacle.type !== 'rect') return;
             const point = this._scaledStagePoint(obstacle);
-            const width = (obstacle.w / this.STAGE_BASE_WIDTH) * this.width;
-            const height = (obstacle.h / this.STAGE_BASE_HEIGHT) * this.height;
-            const body = this.Matter.Bodies.rectangle(point.x, point.y, width, height, {
-                isStatic: true,
-                angle: obstacle.angle || 0,
-                restitution: 0.9,
-                friction: 0.1,
-                render: { fillStyle: '#f59e0b' }
-            });
+            let body = null;
+            if (obstacle.type === 'rect') {
+                const width = (obstacle.w / this.STAGE_BASE_WIDTH) * this.width;
+                const height = (obstacle.h / this.STAGE_BASE_HEIGHT) * this.height;
+                body = this.Matter.Bodies.rectangle(point.x, point.y, width, height, {
+                    isStatic: true,
+                    angle: obstacle.angle || 0,
+                    restitution: 0.9,
+                    friction: 0.1,
+                    render: { fillStyle: '#f59e0b' }
+                });
+            } else if (obstacle.type === 'circle') {
+                const radius = this._scaledStageRadius(obstacle.r, this.MIN_OBSTACLE_RADIUS);
+                body = this.Matter.Bodies.circle(point.x, point.y, radius, {
+                    isStatic: true,
+                    restitution: 0.9,
+                    friction: 0.08,
+                    render: { fillStyle: '#0ea5e9' }
+                });
+            } else if (obstacle.type === 'star') {
+                const outerRadius = this._scaledStageRadius(obstacle.outerR, this.MIN_OBSTACLE_RADIUS + 4);
+                const innerRadius = this._scaledStageRadius(obstacle.innerR, this.MIN_OBSTACLE_INNER_RADIUS);
+                const vertices = this._createStarVertices(outerRadius, innerRadius);
+                body = this.Matter.Bodies.fromVertices(point.x, point.y, [vertices], {
+                    isStatic: true,
+                    restitution: 0.9,
+                    friction: 0.08,
+                    render: { fillStyle: '#f59e0b' }
+                }, true);
+                if (Array.isArray(body)) {
+                    [body] = body;
+                }
+                if (body && obstacle.angle) {
+                    this.Matter.Body.setAngle(body, obstacle.angle);
+                }
+            }
+            if (!body) return;
             this.fixedBodies.push(body);
         });
         this.Matter.World.add(this.world, this.fixedBodies);
+    }
+
+    _createStarVertices(outerRadius, innerRadius, points = 5) {
+        const vertices = [];
+        const step = Math.PI / points;
+        for (let index = 0; index < points * 2; index += 1) {
+            const radius = index % 2 === 0 ? outerRadius : innerRadius;
+            const angle = (index * step) - (Math.PI / 2);
+            vertices.push({
+                x: Math.cos(angle) * radius,
+                y: Math.sin(angle) * radius
+            });
+        }
+        return vertices;
     }
 
     _buildSpawnGuide() {
@@ -884,10 +1017,6 @@ class KorokoroReflect {
         return Math.min(max, Math.max(min, value));
     }
 
-    _calculateStageOffset(index) {
-        return ((index * this.STAGE_VARIATION_STEP) % this.STAGE_VARIATION_SPAN) - this.STAGE_VARIATION_CENTER;
-    }
-
     _nextUnlockStageCount() {
         return Math.min(this.stages.length, this.stageIndex + 2);
     }
@@ -1030,6 +1159,25 @@ class KorokoroReflect {
             render: { fillStyle: '#ef4444' }
         });
         this.Matter.World.add(this.world, this.ball);
+        const initialVelocity = this._getSpawnInitialVelocity();
+        if (initialVelocity.x !== 0 || initialVelocity.y !== 0) {
+            this.Matter.Body.setVelocity(this.ball, initialVelocity);
+        }
+    }
+
+    _getSpawnInitialVelocity() {
+        const direction = this.stage.spawnDirection || 'down';
+        const speed = Math.max(0.1, this.stage.spawnSpeed || this.SPAWN_SPEED_VERTICAL);
+        if (direction === 'right') {
+            return { x: Math.abs(speed), y: -0.08 };
+        }
+        if (direction === 'left') {
+            return { x: -Math.abs(speed), y: -0.08 };
+        }
+        if (direction === 'up') {
+            return { x: 0, y: -Math.abs(speed) };
+        }
+        return { x: 0, y: Math.abs(speed) * 0.08 };
     }
 
     _registerCollision() {
