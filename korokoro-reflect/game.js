@@ -25,10 +25,12 @@ class KorokoroReflect {
         this.GOAL_SHIFT_RATE = 0.8;
         this.OBSTACLE_SHIFT_BASE = 0.4;
         this.OBSTACLE_SHIFT_STEP = 0.1;
+        this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
+        this.STAGE_TOTAL = 100;
 
         this.stageText = document.getElementById('stageText');
-        this.messageText = document.getElementById('messageText');
         this.stockText = document.getElementById('stockText');
+        this.fxBadge = document.getElementById('fxBadge');
 
         this.playArea = document.getElementById('playArea');
         this.startBtn = document.getElementById('startBtn');
@@ -56,8 +58,10 @@ class KorokoroReflect {
 
         this.render = null;
         this.world = this.engine.world;
-        this.stages = this._buildStages(100);
+        this.stages = this._buildStages(this.STAGE_TOTAL);
         this.stageIndex = 0;
+        this.unlockedStageCount = this._loadUnlockedStageCount();
+        this.stageButtons = [];
 
         this.selectedTool = 'rect';
         this.selectedBlock = null;
@@ -71,6 +75,7 @@ class KorokoroReflect {
         this.isCleared = false;
         this.draggingBlock = null;
         this.stuckFrames = 0;
+        this.fxTimerId = null;
 
         this._initRenderer();
         this._bindEvents();
@@ -123,7 +128,7 @@ class KorokoroReflect {
             const goal = {
                 x: this._clampValue(template.goal.x - offset * this.GOAL_SHIFT_RATE, 34, 286),
                 y: this._clampValue(template.goal.y - (index % 5) * 4, 300, 398),
-                r: template.goal.r
+                r: Math.max(14, template.goal.r - level)
             };
 
             const obstacles = template.obstacles.map((obstacle, obstacleIndex) => ({
@@ -136,13 +141,31 @@ class KorokoroReflect {
                 y: this._clampValue(obstacle.y + ((index + obstacleIndex) % 3) * 8, 120, 330)
             }));
 
+            const extraObstacles = this._buildDifficultyObstacles(level, offset);
             return {
                 spawn,
                 goal,
-                maxBlocks: Math.min(4, template.maxBlocks + level),
-                obstacles
+                maxBlocks: Math.max(1, template.maxBlocks - Math.floor(level / 3)),
+                obstacles: [...obstacles, ...extraObstacles]
             };
         });
+    }
+
+    _buildDifficultyObstacles(level, offset) {
+        if (level <= 0) return [];
+        const obstacles = [];
+        const count = Math.min(3, level);
+        for (let index = 0; index < count; index += 1) {
+            obstacles.push({
+                type: 'rect',
+                x: this._clampValue(85 + index * 85 + offset * 0.2, 56, 264),
+                y: this._clampValue(150 + index * 55, 120, 332),
+                w: this._clampValue(94 - level * 3, 56, 104),
+                h: 14,
+                angle: ((index % 2 === 0 ? 1 : -1) * 0.15) + level * 0.02
+            });
+        }
+        return obstacles;
     }
 
     _initRenderer() {
@@ -206,12 +229,15 @@ class KorokoroReflect {
             button.textContent = String(stageIndex + 1);
             button.setAttribute('aria-label', `ステージ ${stageIndex + 1}`);
             button.addEventListener('click', () => {
+                if (stageIndex + 1 > this.unlockedStageCount) return;
                 this._toggleModal(this.stageSelectModal, false);
                 this._loadStage(stageIndex);
             });
             fragment.appendChild(button);
+            this.stageButtons.push(button);
         });
         this.stageList.appendChild(fragment);
+        this._syncStageButtonsLock();
     }
 
     _showHelpIfFirstTime() {
@@ -237,6 +263,28 @@ class KorokoroReflect {
     _toggleModal(modal, visible) {
         modal.classList.toggle('hidden', !visible);
         modal.setAttribute('aria-hidden', visible ? 'false' : 'true');
+    }
+
+    _loadUnlockedStageCount() {
+        try {
+            const value = Number(localStorage.getItem(this.STAGE_UNLOCK_KEY));
+            if (Number.isFinite(value)) {
+                return this._clampValue(Math.floor(value), 1, this.stages.length);
+            }
+        } catch (_error) {}
+        return 1;
+    }
+
+    _saveUnlockedStageCount() {
+        try {
+            localStorage.setItem(this.STAGE_UNLOCK_KEY, String(this.unlockedStageCount));
+        } catch (_error) {}
+    }
+
+    _syncStageButtonsLock() {
+        this.stageButtons.forEach((button, index) => {
+            button.disabled = index + 1 > this.unlockedStageCount;
+        });
     }
 
     _resizeAndReload() {
@@ -285,9 +333,14 @@ class KorokoroReflect {
         this._buildSpawnGuide();
 
         this.stageText.textContent = `ステージ ${this.stageIndex + 1} / ${this.stages.length}`;
-        this.messageText.textContent = '赤い輪がスタート、緑の円がゴール。下の形を置いてスタートしよう！';
         this.startBtn.disabled = false;
         this.nextBtn.disabled = true;
+        this.playArea.classList.remove('fail-flash', 'clear-flash', 'stuck-fail');
+        if (this.fxTimerId) {
+            clearTimeout(this.fxTimerId);
+            this.fxTimerId = null;
+        }
+        this._hideFxBadge();
 
         this._updateBlockStock();
         this._syncSelectionUI();
@@ -299,6 +352,7 @@ class KorokoroReflect {
         buttons.forEach((button, index) => {
             button.classList.toggle('active', index === this.stageIndex);
         });
+        this._syncStageButtonsLock();
     }
 
     _buildWalls() {
@@ -388,7 +442,7 @@ class KorokoroReflect {
         }
 
         if (this.placedBlocks.length >= this.stage.maxBlocks) {
-            this.messageText.textContent = 'これ以上は置けないよ！';
+            this._showFxBadge('これ以上は置けないよ！', 'fail', 900);
             return;
         }
 
@@ -434,38 +488,23 @@ class KorokoroReflect {
 
         if (tool === 'star') {
             const safePoint = this._clampCircleCenter(point, this.STAR_TOOL_OUTER_RADIUS);
-            const vertices = this._createStarVertices(this.STAR_TOOL_OUTER_RADIUS, this.STAR_TOOL_INNER_RADIUS, 5);
-            const starBody = this.Matter.Bodies.fromVertices(safePoint.x, safePoint.y, [vertices], {
+            return this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.STAR_TOOL_OUTER_RADIUS * 0.8, {
                 ...options,
                 label: 'tool-star',
-                render: { fillStyle: '#fbbf24', strokeStyle: '#d97706', lineWidth: 1 }
-            // keep internal edges flagged for stable rendering of multi-vertex star shapes
-            }, true);
-            const safeBody = this._firstBody(starBody);
-            if (safeBody) return safeBody;
-            // fallback keeps placement usable if star vertex decomposition is unavailable
-            return this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.STAR_TOOL_OUTER_RADIUS, {
-                ...options,
-                label: 'tool-star',
-                render: { fillStyle: '#fbbf24', strokeStyle: '#d97706', lineWidth: 1 }
+                render: {
+                    fillStyle: 'transparent',
+                    strokeStyle: '#d97706',
+                    lineWidth: 1,
+                    sprite: {
+                        texture: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E",
+                        xScale: 0.4,
+                        yScale: 0.4
+                    }
+                }
             });
         }
 
         return null;
-    }
-
-    _createStarVertices(outerRadius, innerRadius, points) {
-        const vertices = [];
-        const step = Math.PI / points;
-        for (let idx = 0; idx < points * 2; idx += 1) {
-            const radius = idx % 2 === 0 ? outerRadius : innerRadius;
-            const angle = idx * step - Math.PI / 2;
-            vertices.push({
-                x: Math.cos(angle) * radius,
-                y: Math.sin(angle) * radius
-            });
-        }
-        return vertices;
     }
 
     _onPointerMove(event) {
@@ -546,9 +585,27 @@ class KorokoroReflect {
         return ((index * this.STAGE_VARIATION_STEP) % this.STAGE_VARIATION_SPAN) - this.STAGE_VARIATION_CENTER;
     }
 
-    _firstBody(body) {
-        const first = Array.isArray(body) ? body[0] : body;
-        return first && typeof first === 'object' ? first : null;
+    _showFxBadge(text, mode, durationMs) {
+        if (!this.fxBadge) return;
+        this.fxBadge.textContent = text;
+        this.fxBadge.classList.remove('hidden', 'clear', 'fail');
+        this.fxBadge.classList.add(mode === 'clear' ? 'clear' : 'fail');
+        if (this.fxTimerId) {
+            clearTimeout(this.fxTimerId);
+        }
+        this.fxTimerId = setTimeout(() => this._hideFxBadge(), durationMs);
+    }
+
+    _hideFxBadge() {
+        if (!this.fxBadge) return;
+        this.fxBadge.classList.remove('clear', 'fail');
+        this.fxBadge.classList.add('hidden');
+    }
+
+    _flashPlayArea(className) {
+        this.playArea.classList.remove('fail-flash', 'clear-flash');
+        void this.playArea.offsetWidth;
+        this.playArea.classList.add(className);
     }
 
     _rotateSelected() {
@@ -588,8 +645,9 @@ class KorokoroReflect {
         if (this.isStarted) return;
 
         this.isStarted = true;
-        this.messageText.textContent = 'ボールをゴールへ導こう！';
         this.startBtn.disabled = true;
+        this.playArea.classList.remove('stuck-fail');
+        this._hideFxBadge();
 
         this.engine.gravity.y = 1.02;
         const safeSpawn = this._clampCircleCenter(this._scaledStagePoint(this.stage.spawn), this.BALL_RADIUS);
@@ -621,8 +679,12 @@ class KorokoroReflect {
         this.isCleared = true;
         this.isStarted = false;
         this.engine.gravity.y = 0;
-        this.messageText.textContent = 'やったね！ゴール成功！';
-        this.nextBtn.disabled = this.stageIndex >= this.stages.length - 1;
+        this.unlockedStageCount = Math.max(this.unlockedStageCount, Math.min(this.stages.length, this.stageIndex + 2));
+        this._saveUnlockedStageCount();
+        this._syncStageButtonsLock();
+        this._showFxBadge('クリア！', 'clear', 1300);
+        this._flashPlayArea('clear-flash');
+        this.nextBtn.disabled = this.stageIndex + 1 >= this.unlockedStageCount;
         this.startBtn.disabled = true;
     }
 
@@ -630,7 +692,12 @@ class KorokoroReflect {
         this.isStarted = false;
         this.engine.gravity.y = 0;
         this.startBtn.disabled = false;
-        this.messageText.textContent = reasonText;
+        this.playArea.classList.remove('stuck-fail');
+        this._showFxBadge(reasonText, 'fail', 1500);
+        this._flashPlayArea('fail-flash');
+        if (reasonText.includes('止まった')) {
+            this.playArea.classList.add('stuck-fail');
+        }
 
         if (this.ball) {
             this.Matter.World.remove(this.world, this.ball);
@@ -640,9 +707,10 @@ class KorokoroReflect {
 
     _onNextStage() {
         if (this.stageIndex >= this.stages.length - 1) {
-            this.messageText.textContent = 'ぜんぶクリア！もう一度あそぼう！';
+            this._showFxBadge('ぜんぶクリア！', 'clear', 1500);
             return;
         }
+        if (this.stageIndex + 2 > this.unlockedStageCount) return;
         this._loadStage(this.stageIndex + 1);
     }
 
@@ -669,8 +737,8 @@ class KorokoroReflect {
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!window.Matter) {
-        const text = document.getElementById('messageText');
-        if (text) text.textContent = '物理エンジンの読み込みに失敗しました。ページを再読み込みしてください。';
+        const stageText = document.getElementById('stageText');
+        if (stageText) stageText.textContent = '読み込みに失敗しました。再読み込みしてください。';
         return;
     }
     new KorokoroReflect();

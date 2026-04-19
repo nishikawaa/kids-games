@@ -29,8 +29,9 @@
         </header>
 
         <main>
-            <div id="playArea" class="play-area"></div>
-            <p id="messageText" class="message">赤い輪がスタート、緑の円がゴール。下の形を置いてスタートしよう！</p>
+            <div id="playArea" class="play-area">
+                <div id="fxBadge" class="fx-badge hidden" aria-live="polite"></div>
+            </div>
         </main>
 
         <footer class="toolbox">
@@ -52,7 +53,9 @@
                 <span id="stockText">のこり: 1</span>
             </div>
             <div class="tool-row">
-                <button id="rotateBtn" class="tool-btn">回転 +15°</button>
+                <button id="rotateBtn" class="tool-btn icon-btn" aria-label="15度回転">
+                    <span class="rotate-icon" aria-hidden="true">⟲15°</span>
+                </button>
                 <button id="deleteBtn" class="tool-btn">削除</button>
             </div>
             <div class="tool-row">

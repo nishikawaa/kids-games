@@ -72,6 +72,7 @@ main {
     width: 100%;
     height: clamp(220px, 44vh, 460px);
     height: clamp(220px, 44dvh, 460px);
+    position: relative;
     border-radius: 16px;
     overflow: hidden;
     background: linear-gradient(180deg, #f0fbff 0%, #fffef5 100%);
@@ -83,14 +84,6 @@ main {
     width: 100%;
     height: 100%;
     display: block;
-}
-
-.message {
-    text-align: center;
-    min-height: 1.8em;
-    font-weight: 700;
-    color: #374151;
-    padding: 2px 6px;
 }
 
 .toolbox {
@@ -168,6 +161,15 @@ button:disabled {
     color: #fff;
 }
 
+.icon-btn {
+    font-size: 1.12rem;
+    letter-spacing: 0.02em;
+}
+
+.rotate-icon {
+    font-weight: 800;
+}
+
 .tool-icon {
     width: 18px;
     height: 18px;
@@ -239,6 +241,60 @@ button:disabled {
 .stage-item.active {
     background: #4338ca;
     color: #ffffff;
+}
+
+.stage-item:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.play-area.fail-flash {
+    animation: failFlash 0.65s ease;
+}
+
+.play-area.stuck-fail {
+    background: linear-gradient(180deg, #fee2e2 0%, #fef3c7 100%);
+}
+
+.play-area.clear-flash {
+    animation: clearFlash 0.8s ease;
+}
+
+.fx-badge {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    border-radius: 999px;
+    padding: 6px 12px;
+    font-weight: 800;
+    color: #ffffff;
+    pointer-events: none;
+}
+
+.fx-badge.hidden {
+    display: none;
+}
+
+.fx-badge.clear {
+    background: rgba(22, 163, 74, 0.88);
+}
+
+.fx-badge.fail {
+    background: rgba(220, 38, 38, 0.86);
+}
+
+@keyframes failFlash {
+    0% { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 0 rgba(239, 68, 68, 0.35); }
+    60% { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 14px rgba(239, 68, 68, 0); }
+    100% { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+@keyframes clearFlash {
+    0% { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 0 rgba(34, 197, 94, 0.4); }
+    60% { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 18px rgba(34, 197, 94, 0); }
+    100% { box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8), 0 0 0 0 rgba(34, 197, 94, 0); }
 }
 
 .help-list {
