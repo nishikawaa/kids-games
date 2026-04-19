@@ -27,6 +27,7 @@ class KorokoroReflect {
 
         this.STAGE_BASE_WIDTH = 320;
         this.STAGE_BASE_HEIGHT = 420;
+        this.STAGE_BOUNDARY_MARGIN = 24;
         this.STAGE_VARIATION_STEP = 17;
         this.STAGE_VARIATION_SPAN = 70;
         this.STAGE_VARIATION_CENTER = 35;
@@ -710,8 +711,8 @@ class KorokoroReflect {
         const maxReachableSpawnY = ['left', 'right'].includes(spawnDirection)
             ? Math.min(goal.y - minDrop, horizontalSpawnYCap)
             : goal.y - minDrop;
-        const minStageY = 24;
-        const maxStageY = this.STAGE_BASE_HEIGHT - 24;
+        const minStageY = this.STAGE_BOUNDARY_MARGIN;
+        const maxStageY = this.STAGE_BASE_HEIGHT - this.STAGE_BOUNDARY_MARGIN;
         if (spawn.y > maxReachableSpawnY) {
             spawn.y = this._clampValue(maxReachableSpawnY, minStageY, maxStageY);
         }
