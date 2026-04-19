@@ -762,11 +762,11 @@ class KorokoroReflect {
             const y = this.ball.position.y;
 
             if (y > this.height + 26) {
-                this._onFail('ぼーるがおちちゃった！リトライしよう。', 'fall');
+                this._onFail('ボールがおちちゃった！リトライしよう。', 'fall');
             } else if (speed < this.STUCK_MIN_SPEED && y > this.height * this.STUCK_CHECK_HEIGHT_RATIO) {
                 this.stuckFrames += 1;
                 if (this.stuckFrames > this.STUCK_MAX_FRAMES) {
-                    this._onFail('ぼーるがとまったよ。はいちをかえてみよう！', 'stuck');
+                    this._onFail('ボールがとまったよ。はいちをかえてみよう！', 'stuck');
                 }
             } else {
                 this.stuckFrames = 0;
