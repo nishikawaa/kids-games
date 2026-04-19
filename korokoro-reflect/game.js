@@ -338,7 +338,7 @@ class KorokoroReflect {
             },
             generatedDefinition.spawnDirection
         );
-        const maxBlocks = this._tuneStageMaxBlocks(stageNumber, generatedDefinition.maxBlocks);
+        const tunedMaxBlocks = this._tuneStageMaxBlocks(stageNumber, generatedDefinition.maxBlocks);
         const obstacles = this._tuneStageObstaclesForOverride({
             stageNumber,
             obstacles: generatedDefinition.obstacles,
@@ -363,7 +363,7 @@ class KorokoroReflect {
             spawnDirection: generatedDefinition.spawnDirection,
             spawnSpeed: Number((baseSpeed * speedBias).toFixed(3)),
             goal,
-            maxBlocks,
+            maxBlocks: tunedMaxBlocks,
             minRequiredBlocks: 1,
             availableTools,
             obstacles
@@ -430,7 +430,7 @@ class KorokoroReflect {
             ];
         }
 
-        return balanced.slice(0, maxObstacles);
+        return balanced;
     }
 
     _mergeStageDefinition(base, override, stageNumber = null) {
