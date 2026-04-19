@@ -710,8 +710,10 @@ class KorokoroReflect {
         const maxReachableSpawnY = ['left', 'right'].includes(spawnDirection)
             ? Math.min(goal.y - minDrop, horizontalSpawnYCap)
             : goal.y - minDrop;
+        const minStageY = 24;
+        const maxStageY = this.STAGE_BASE_HEIGHT - 24;
         if (spawn.y > maxReachableSpawnY) {
-            spawn.y = this._clampValue(maxReachableSpawnY, 24, 396);
+            spawn.y = this._clampValue(maxReachableSpawnY, minStageY, maxStageY);
         }
     }
 
