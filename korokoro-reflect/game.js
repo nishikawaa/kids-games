@@ -854,9 +854,10 @@ class KorokoroReflect {
         this.resetBtn.addEventListener('click', () => this._loadStage(this.stageIndex));
         this.nextBtn.addEventListener('click', () => this._onNextStage());
 
-        this._bindToolDragEvents(this.selectRectBtn, 'rect');
-        this._bindToolDragEvents(this.selectCircleBtn, 'circle');
-        this._bindToolDragEvents(this.selectStarBtn, 'star');
+        Object.entries(this.toolButtons).forEach(([tool, button]) => {
+            if (!button) return;
+            this._bindToolDragEvents(button, tool);
+        });
 
         this.menuBtn.addEventListener('click', () => {
             const isOpen = !this.menuPanel.classList.contains('hidden');
@@ -1054,9 +1055,9 @@ class KorokoroReflect {
     _setTool(tool) {
         if (!this._isToolAvailable(tool)) return;
         this.selectedTool = tool;
-        this.selectRectBtn.classList.toggle('active', tool === 'rect');
-        this.selectCircleBtn.classList.toggle('active', tool === 'circle');
-        this.selectStarBtn.classList.toggle('active', tool === 'star');
+        if (this.selectRectBtn) this.selectRectBtn.classList.toggle('active', tool === 'rect');
+        if (this.selectCircleBtn) this.selectCircleBtn.classList.toggle('active', tool === 'circle');
+        if (this.selectStarBtn) this.selectStarBtn.classList.toggle('active', tool === 'star');
     }
 
     _isToolAvailable(tool) {
@@ -1066,6 +1067,7 @@ class KorokoroReflect {
     _syncToolAvailability() {
         const availableTools = this.stage?.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS;
         Object.entries(this.toolButtons).forEach(([tool, button]) => {
+            if (!button) return;
             const isAvailable = availableTools.includes(tool);
             button.disabled = !isAvailable;
             button.classList.toggle('tool-hidden', !isAvailable);
@@ -1079,7 +1081,7 @@ class KorokoroReflect {
 
     _loadStage(index) {
         this.stageIndex = index;
-        this.stage = this.stages[index];
+        this.stage = this._normalizeStageShapePalette(this.stages[index]);
 
         this.isStarted = false;
         this.isCleared = false;
@@ -1118,6 +1120,38 @@ class KorokoroReflect {
         this._syncToolAvailability();
         this._syncSelectionUI();
         this._syncStageListHighlight();
+    }
+
+    _normalizeStageShapePalette(stageDefinition) {
+        const availableTools = (stageDefinition?.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS)
+            .filter((tool) => tool !== 'circle');
+        const normalizedTools = availableTools.length > 0 ? availableTools : ['rect'];
+        const normalizedObstacles = (stageDefinition?.obstacles ?? []).map((obstacle) => {
+            if (!obstacle || typeof obstacle !== 'object') return obstacle;
+            if (obstacle.type === 'circle' || obstacle.type === 'bumper') {
+                const radius = Number(obstacle.r);
+                const safeRadius = Number.isFinite(radius) ? Math.max(this.MIN_OBSTACLE_RADIUS, radius) : 16;
+                const size = Math.max(20, Math.round(safeRadius * 2));
+                const isBumper = obstacle.type === 'bumper';
+                return {
+                    ...obstacle,
+                    type: 'rect',
+                    w: isBumper ? Math.max(24, size) : Math.max(20, Math.round(size * 0.95)),
+                    h: isBumper ? Math.max(24, size) : Math.max(20, Math.round(size * 0.95)),
+                    restitution: isBumper ? this.BUMPER_RESTITUTION : 0.9,
+                    friction: isBumper ? 0.02 : 0.08,
+                    fillStyle: isBumper ? '#ec4899' : '#0ea5e9',
+                    strokeStyle: isBumper ? '#9d174d' : undefined,
+                    lineWidth: isBumper ? 3 : 1
+                };
+            }
+            return { ...obstacle };
+        });
+        return {
+            ...stageDefinition,
+            availableTools: normalizedTools,
+            obstacles: normalizedObstacles
+        };
     }
 
     _syncStageListHighlight() {
@@ -1174,9 +1208,13 @@ class KorokoroReflect {
                 body = this.Matter.Bodies.rectangle(point.x, point.y, width, height, {
                     isStatic: true,
                     angle: obstacle.angle || 0,
-                    restitution: 0.9,
-                    friction: 0.1,
-                    render: { fillStyle: '#f59e0b' }
+                    restitution: obstacle.restitution ?? 0.9,
+                    friction: obstacle.friction ?? 0.1,
+                    render: {
+                        fillStyle: obstacle.fillStyle || '#f59e0b',
+                        strokeStyle: obstacle.strokeStyle,
+                        lineWidth: obstacle.lineWidth || 0
+                    }
                 });
             } else if (obstacle.type === 'circle') {
                 const radius = this._scaledStageRadius(obstacle.r, this.MIN_OBSTACLE_RADIUS);
