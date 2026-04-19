@@ -29,6 +29,13 @@ class KorokoroReflect {
         this.STAGE_TOTAL = 100;
         this.BLOCKS_DECREASE_INTERVAL = 6;
         this.MAX_EXTRA_OBSTACLES = 3;
+        this.MIN_BLOCKS_PER_STAGE = 1;
+        this.MIN_GOAL_RADIUS = 14;
+        this.STAR_PHYSICS_RADIUS_SCALE = 0.8;
+        this.DIFFICULTY_BASE_OBSTACLE_WIDTH = 94;
+        this.DIFFICULTY_OBSTACLE_WIDTH_STEP = 3;
+        this.DIFFICULTY_MIN_OBSTACLE_WIDTH = 56;
+        this.DIFFICULTY_MAX_OBSTACLE_WIDTH = 104;
         this.STAR_TEXTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E";
 
         this.stageText = document.getElementById('stageText');
@@ -131,7 +138,7 @@ class KorokoroReflect {
             const goal = {
                 x: this._clampValue(template.goal.x - offset * this.GOAL_SHIFT_RATE, 34, 286),
                 y: this._clampValue(template.goal.y - (index % 5) * 4, 300, 398),
-                r: Math.max(14, template.goal.r - level)
+                r: Math.max(this.MIN_GOAL_RADIUS, template.goal.r - level)
             };
 
             const obstacles = template.obstacles.map((obstacle, obstacleIndex) => ({
@@ -148,7 +155,7 @@ class KorokoroReflect {
             return {
                 spawn,
                 goal,
-                maxBlocks: Math.max(1, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
+                maxBlocks: Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
                 obstacles: [...obstacles, ...extraObstacles]
             };
         });
@@ -163,7 +170,11 @@ class KorokoroReflect {
                 type: 'rect',
                 x: this._clampValue(85 + index * 85 + offset * 0.2, 56, 264),
                 y: this._clampValue(150 + index * 55, 120, 332),
-                w: this._clampValue(94 - level * 3, 56, 104),
+                w: this._clampValue(
+                    this.DIFFICULTY_BASE_OBSTACLE_WIDTH - level * this.DIFFICULTY_OBSTACLE_WIDTH_STEP,
+                    this.DIFFICULTY_MIN_OBSTACLE_WIDTH,
+                    this.DIFFICULTY_MAX_OBSTACLE_WIDTH
+                ),
                 h: 14,
                 angle: ((index % 2 === 0 ? 1 : -1) * 0.15) + level * 0.02
             });
@@ -494,7 +505,7 @@ class KorokoroReflect {
 
         if (tool === 'star') {
             const safePoint = this._clampCircleCenter(point, this.STAR_TOOL_OUTER_RADIUS);
-            return this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.STAR_TOOL_OUTER_RADIUS * 0.8, {
+            return this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.STAR_TOOL_OUTER_RADIUS * this.STAR_PHYSICS_RADIUS_SCALE, {
                 ...options,
                 label: 'tool-star',
                 render: {
