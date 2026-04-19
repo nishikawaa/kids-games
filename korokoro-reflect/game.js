@@ -283,7 +283,7 @@ class KorokoroReflect {
             };
             const stageOverride = overrides[stageNumber];
             return stageOverride
-                ? this._mergeStageDefinition(generatedDefinition, stageOverride)
+                ? this._mergeStageDefinition(generatedDefinition, stageOverride, stageNumber)
                 : generatedDefinition;
         });
     }
@@ -299,10 +299,11 @@ class KorokoroReflect {
         };
     }
 
-    _mergeStageDefinition(base, override) {
+    _mergeStageDefinition(base, override, stageNumber = null) {
         if (!override || typeof override !== 'object') return base;
         if (Array.isArray(override)) {
-            console.warn('Invalid stage override format: expected object but received array.');
+            const stageLabel = stageNumber == null ? '' : ` for stage ${stageNumber}`;
+            console.warn(`Invalid stage override format${stageLabel}: expected object but received array.`);
             return base;
         }
         const mergedSpawn = this._mergeObject(base.spawn, override.spawn);
