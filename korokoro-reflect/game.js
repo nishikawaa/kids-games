@@ -210,10 +210,10 @@ class KorokoroReflect {
 
     _buildGoal() {
         const g = this.stage.goal;
-        const point = this._scaledStagePoint(g);
-        const r = this._scaledStageRadius(g.r, this.BALL_RADIUS);
-        const safePoint = this._clampCircleCenter(point, r);
-        this.goalSensor = this.Matter.Bodies.circle(safePoint.x, safePoint.y, r, {
+        const scaledGoalPoint = this._scaledStagePoint(g);
+        const scaledRadius = this._scaledStageRadius(g.r, this.BALL_RADIUS);
+        const safePoint = this._clampCircleCenter(scaledGoalPoint, scaledRadius);
+        this.goalSensor = this.Matter.Bodies.circle(safePoint.x, safePoint.y, scaledRadius, {
             isStatic: true,
             isSensor: true,
             label: 'goal',
@@ -238,8 +238,8 @@ class KorokoroReflect {
     }
 
     _buildSpawnGuide() {
-        const point = this._scaledStagePoint(this.stage.spawn);
-        const safePoint = this._clampCircleCenter(point, this.SPAWN_GUIDE_RADIUS);
+        const scaledSpawnPoint = this._scaledStagePoint(this.stage.spawn);
+        const safePoint = this._clampCircleCenter(scaledSpawnPoint, this.SPAWN_GUIDE_RADIUS);
         this.spawnGuide = this.Matter.Bodies.circle(safePoint.x, safePoint.y, this.SPAWN_GUIDE_RADIUS, {
             isStatic: true,
             isSensor: true,
