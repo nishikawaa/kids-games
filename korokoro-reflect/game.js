@@ -78,6 +78,9 @@ class KorokoroReflect {
         this.closeStageListBtn = document.getElementById('closeStageListBtn');
         this.helpModal = document.getElementById('helpModal');
         this.closeHelpBtn = document.getElementById('closeHelpBtn');
+        this.clearModal = document.getElementById('clearModal');
+        this.clearNextBtn = document.getElementById('clearNextBtn');
+        this.clearStageListBtn = document.getElementById('clearStageListBtn');
 
         this.Matter = window.Matter;
         this.engine = this.Matter.Engine.create();
@@ -111,6 +114,7 @@ class KorokoroReflect {
         this.stuckFrames = 0;
         this.fxTimerId = null;
         this.blockPointerState = null;
+        this.clearActionLockedButtons = [];
         this._onDocumentPointerDown = (event) => {
             if (!this.menuPanel || !this.menuBtn || this.menuPanel.classList.contains('hidden')) return;
             if (this.menuPanel.contains(event.target) || this.menuBtn.contains(event.target)) return;
@@ -267,6 +271,14 @@ class KorokoroReflect {
             this._toggleModal(this.helpModal, true);
         });
         this.closeHelpBtn.addEventListener('click', () => this._closeHelp());
+        this.clearNextBtn.addEventListener('click', () => {
+            this._setClearOverlayVisible(false);
+            this._onNextStage();
+        });
+        this.clearStageListBtn.addEventListener('click', () => {
+            this._setClearOverlayVisible(false);
+            this._toggleModal(this.stageSelectModal, true);
+        });
 
         this.stageSelectModal.addEventListener('click', (event) => {
             if (event.target === this.stageSelectModal) this._toggleModal(this.stageSelectModal, false);
@@ -347,6 +359,44 @@ class KorokoroReflect {
         this.menuPanel.classList.toggle('hidden', !visible);
         this.menuPanel.setAttribute('aria-hidden', visible ? 'false' : 'true');
         this.menuBtn.setAttribute('aria-expanded', visible ? 'true' : 'false');
+    }
+
+    _setClearOverlayVisible(visible) {
+        if (!this.clearModal) return;
+        this.clearModal.classList.toggle('hidden', !visible);
+        this.clearModal.setAttribute('aria-hidden', visible ? 'false' : 'true');
+        if (visible) {
+            this._toggleHeaderMenu(false);
+        }
+        this._setClearActionsLock(visible);
+    }
+
+    _setClearActionsLock(locked) {
+        const controls = [
+            this.startBtn,
+            this.resetBtn,
+            this.deleteBtn,
+            this.menuBtn,
+            this.selectRectBtn,
+            this.selectCircleBtn,
+            this.selectStarBtn
+        ].filter(Boolean);
+
+        if (locked) {
+            this.clearActionLockedButtons = controls;
+            controls.forEach((control) => {
+                control.dataset.clearPrevDisabled = control.disabled ? '1' : '0';
+                control.disabled = true;
+            });
+            return;
+        }
+
+        this.clearActionLockedButtons.forEach((control) => {
+            const prevDisabled = control.dataset.clearPrevDisabled === '1';
+            control.disabled = prevDisabled;
+            delete control.dataset.clearPrevDisabled;
+        });
+        this.clearActionLockedButtons = [];
     }
 
     _loadUnlockedStageCount() {
@@ -447,6 +497,7 @@ class KorokoroReflect {
         this.stageText.textContent = `ステージ ${this.stageIndex + 1} / ${this.stages.length}`;
         this.startBtn.disabled = false;
         this._setNextButtonReady(false);
+        this._setClearOverlayVisible(false);
         this.playArea.classList.remove('fail-flash', 'clear-flash', 'stuck-fail');
         if (this.fxTimerId) {
             clearTimeout(this.fxTimerId);
@@ -965,7 +1016,8 @@ class KorokoroReflect {
         this._syncStageButtonsLock();
         this._showFxBadge('クリア！', 'clear', 1300);
         this._flashPlayArea('clear-flash');
-        this._setNextButtonReady(true);
+        this._setNextButtonReady(false);
+        this._setClearOverlayVisible(true);
         this.startBtn.disabled = true;
     }
 
@@ -1000,6 +1052,7 @@ class KorokoroReflect {
     }
 
     _setNextButtonReady(isReady) {
+        if (!this.nextBtn) return;
         const canAdvance = isReady && this.stageIndex < this.stages.length - 1;
         this.nextBtn.disabled = !canAdvance;
         this.nextBtn.classList.toggle('ready', canAdvance);

@@ -70,7 +70,7 @@
             </div>
             <div class="tool-row">
                 <button id="startBtn" class="primary">スタート</button>
-                <button id="nextBtn" class="primary" disabled>つぎのステージ</button>
+                <button id="nextBtn" class="primary legacy-next-btn" disabled>つぎのステージ</button>
             </div>
         </footer>
 
@@ -92,6 +92,17 @@
                     <li>赤い輪からボールが出て、緑の円に入るとクリアです。</li>
                 </ol>
                 <button id="closeHelpBtn" class="primary">OK</button>
+            </div>
+        </section>
+
+        <section id="clearModal" class="overlay clear-overlay hidden" aria-hidden="true">
+            <div class="overlay-card clear-card">
+                <h2>🎉 ステージクリア！</h2>
+                <p>キラキラ花火！つぎへすすむ？</p>
+                <div class="clear-actions">
+                    <button id="clearNextBtn" class="primary">つぎのステージ</button>
+                    <button id="clearStageListBtn" class="secondary">ステージ一覧</button>
+                </div>
             </div>
         </section>
     </div>
