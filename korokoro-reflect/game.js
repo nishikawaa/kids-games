@@ -1020,10 +1020,12 @@ class KorokoroReflect {
         this._showFxBadge('クリア！', 'clear', 1300);
         this._flashPlayArea('clear-flash');
         this._setNextButtonReady(false);
-        this.clearOverlayTimerId = setTimeout(() => {
-            this._setClearOverlayVisible(true);
+        const timerId = setTimeout(() => {
+            if (this.clearOverlayTimerId !== timerId) return;
             this.clearOverlayTimerId = null;
+            this._setClearOverlayVisible(true);
         }, this.CLEAR_OVERLAY_DELAY_MS);
+        this.clearOverlayTimerId = timerId;
         this.startBtn.disabled = true;
     }
 
