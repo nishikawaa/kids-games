@@ -199,14 +199,14 @@ class KorokoroReflect {
 
     _renderStageListButtons() {
         const fragment = document.createDocumentFragment();
-        this.stages.forEach((_, index) => {
+        this.stages.forEach((_, stageIndex) => {
             const button = document.createElement('button');
             button.type = 'button';
             button.className = 'stage-item';
-            button.textContent = String(index + 1);
+            button.textContent = String(stageIndex + 1);
             button.addEventListener('click', () => {
                 this._toggleModal(this.stageSelectModal, false);
-                this._loadStage(index);
+                this._loadStage(stageIndex);
             });
             fragment.appendChild(button);
         });
@@ -440,9 +440,9 @@ class KorokoroReflect {
     _createStarVertices(outerRadius, innerRadius, points) {
         const vertices = [];
         const step = Math.PI / points;
-        for (let index = 0; index < points * 2; index += 1) {
-            const radius = index % 2 === 0 ? outerRadius : innerRadius;
-            const angle = index * step - Math.PI / 2;
+        for (let vertexIndex = 0; vertexIndex < points * 2; vertexIndex += 1) {
+            const radius = vertexIndex % 2 === 0 ? outerRadius : innerRadius;
+            const angle = vertexIndex * step - Math.PI / 2;
             vertices.push({
                 x: Math.cos(angle) * radius,
                 y: Math.sin(angle) * radius
