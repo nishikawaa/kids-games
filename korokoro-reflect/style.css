@@ -124,6 +124,7 @@ button {
     font-size: 0.95rem;
     cursor: pointer;
     transition: transform 0.15s ease, opacity 0.15s ease;
+    touch-action: manipulation;
 }
 
 button:active {
