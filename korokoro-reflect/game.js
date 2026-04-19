@@ -32,6 +32,7 @@ class KorokoroReflect {
         this.MIN_BLOCKS_PER_STAGE = 1;
         this.MIN_GOAL_RADIUS = 14;
         this.STAR_PHYSICS_RADIUS_SCALE = 0.8;
+        this.STAR_SPRITE_SCALE = 0.4;
         this.DIFFICULTY_BASE_OBSTACLE_WIDTH = 94;
         this.DIFFICULTY_OBSTACLE_WIDTH_STEP = 3;
         this.DIFFICULTY_MIN_OBSTACLE_WIDTH = 56;
@@ -284,7 +285,9 @@ class KorokoroReflect {
 
     _loadUnlockedStageCount() {
         try {
-            const value = Number(localStorage.getItem(this.STAGE_UNLOCK_KEY));
+            const rawValue = localStorage.getItem(this.STAGE_UNLOCK_KEY);
+            if (rawValue == null) return 1;
+            const value = Number(rawValue);
             if (Number.isFinite(value)) {
                 return this._clampValue(Math.floor(value), 1, this.stages.length);
             }
@@ -514,8 +517,8 @@ class KorokoroReflect {
                     lineWidth: 1,
                     sprite: {
                         texture: this.STAR_TEXTURE,
-                        xScale: 0.4,
-                        yScale: 0.4
+                        xScale: this.STAR_SPRITE_SCALE,
+                        yScale: this.STAR_SPRITE_SCALE
                     }
                 }
             });
@@ -625,6 +628,7 @@ class KorokoroReflect {
 
     _flashPlayArea(className) {
         this.playArea.classList.remove('fail-flash', 'clear-flash');
+        // force reflow so the same animation class can restart on repeated failures/clears
         void this.playArea.offsetWidth;
         this.playArea.classList.add(className);
     }
