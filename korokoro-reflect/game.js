@@ -300,13 +300,13 @@ class KorokoroReflect {
     }
 
     _mergeStageDefinition(base, override) {
-        if (!override || typeof override !== 'object' || Array.isArray(override)) return base;
-        const mergedSpawn = override.spawn
-            ? { ...base.spawn, ...override.spawn }
-            : { ...base.spawn };
-        const mergedGoal = override.goal
-            ? { ...base.goal, ...override.goal }
-            : { ...base.goal };
+        if (!override || typeof override !== 'object') return base;
+        if (Array.isArray(override)) {
+            console.warn('Invalid stage override format: expected object but received array.');
+            return base;
+        }
+        const mergedSpawn = this._mergeObject(base.spawn, override.spawn);
+        const mergedGoal = this._mergeObject(base.goal, override.goal);
         const mergedObstacles = Array.isArray(override.obstacles)
             ? override.obstacles.map((obstacle) => this._cloneValue(obstacle))
             : base.obstacles.map((obstacle) => this._cloneValue(obstacle));
@@ -324,10 +324,21 @@ class KorokoroReflect {
         };
     }
 
+    _mergeObject(baseValue, overrideValue) {
+        if (!overrideValue || typeof overrideValue !== 'object' || Array.isArray(overrideValue)) {
+            return { ...baseValue };
+        }
+        return { ...baseValue, ...overrideValue };
+    }
+
     _cloneValue(value) {
         if (value == null || typeof value !== 'object') return value;
         if (typeof structuredClone === 'function') return structuredClone(value);
-        return JSON.parse(JSON.stringify(value));
+        try {
+            return JSON.parse(JSON.stringify(value));
+        } catch (_error) {
+            return Array.isArray(value) ? [...value] : { ...value };
+        }
     }
 
     _ensureReachableGoal(spawn, goal, spawnDirection) {
