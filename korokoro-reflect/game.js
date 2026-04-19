@@ -27,6 +27,8 @@ class KorokoroReflect {
         this.OBSTACLE_SHIFT_STEP = 0.1;
         this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
         this.STAGE_TOTAL = 100;
+        this.CIRCLE_UNLOCK_STAGE = 4;
+        this.STAR_UNLOCK_STAGE = 9;
         this.BLOCKS_DECREASE_INTERVAL = 6;
         this.MAX_EXTRA_OBSTACLES = 3;
         this.MIN_BLOCKS_PER_STAGE = 1;
@@ -173,9 +175,9 @@ class KorokoroReflect {
 
             const extraObstacles = this._buildDifficultyObstacles(level, offset);
             const stageNumber = index + 1;
-            const availableTools = stageNumber < 4
+            const availableTools = stageNumber < this.CIRCLE_UNLOCK_STAGE
                 ? ['rect']
-                : stageNumber < 9
+                : stageNumber < this.STAR_UNLOCK_STAGE
                     ? ['rect', 'circle']
                     : ['rect', 'circle', 'star'];
             return {
@@ -850,7 +852,7 @@ class KorokoroReflect {
         if (this.isStarted) return;
         const requiredBlocks = this.stage.minRequiredBlocks ?? this.MIN_REQUIRED_BLOCKS;
         if (this.placedBlocks.length < requiredBlocks) {
-            this._showFxBadge('ブロックを1つおいてから スタートしよう！', 'fail', 1300);
+            this._showFxBadge('ブロックを1つおいてからスタートしよう！', 'fail', 1300);
             return;
         }
 
