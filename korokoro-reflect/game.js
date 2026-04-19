@@ -49,6 +49,7 @@ class KorokoroReflect {
         this.MIN_BLOCKS_PER_STAGE = 1;
         this.REACHABLE_GOAL_MIN_DROP = 52;
         this.HORIZONTAL_SPAWN_DROP_ADJUSTMENT = 16;
+        this.HORIZONTAL_SPAWN_MAX_Y_RATIO = 0.78;
         this.MIN_GOAL_RADIUS = 14;
         this.MIN_OBSTACLE_RADIUS = 9;
         this.MIN_OBSTACLE_INNER_RADIUS = 4;
@@ -674,16 +675,44 @@ class KorokoroReflect {
     }
 
     _buildStages(stageDefinitions) {
-        return stageDefinitions.map((definition) => ({
-            spawn: { ...definition.spawn },
-            spawnDirection: this._resolveSpawnDirection(definition),
-            spawnSpeed: definition.spawnSpeed,
-            goal: { ...definition.goal },
-            maxBlocks: definition.maxBlocks,
-            minRequiredBlocks: definition.minRequiredBlocks ?? this.MIN_REQUIRED_BLOCKS,
-            availableTools: [...(definition.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS)],
-            obstacles: (definition.obstacles ?? []).map((obstacle) => ({ ...obstacle }))
-        }));
+        return stageDefinitions.map((definition) => {
+            const spawnDirection = this._resolveSpawnDirection(definition);
+            const spawn = { ...definition.spawn };
+            const goal = { ...definition.goal };
+            this._normalizeStageReachability(spawn, goal, spawnDirection);
+            return {
+                spawn,
+                spawnDirection,
+                spawnSpeed: definition.spawnSpeed,
+                goal,
+                maxBlocks: definition.maxBlocks,
+                minRequiredBlocks: definition.minRequiredBlocks ?? this.MIN_REQUIRED_BLOCKS,
+                availableTools: [...(definition.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS)],
+                obstacles: (definition.obstacles ?? []).map((obstacle) => ({ ...obstacle }))
+            };
+        });
+    }
+
+    _normalizeStageReachability(spawn, goal, spawnDirection) {
+        if (
+            !spawn
+            || !goal
+            || !Number.isFinite(spawn.y)
+            || !Number.isFinite(goal.y)
+        ) {
+            return;
+        }
+
+        const minDrop = ['left', 'right'].includes(spawnDirection)
+            ? this.REACHABLE_GOAL_MIN_DROP - this.HORIZONTAL_SPAWN_DROP_ADJUSTMENT
+            : this.REACHABLE_GOAL_MIN_DROP;
+        const horizontalSpawnYCap = this.STAGE_BASE_HEIGHT * this.HORIZONTAL_SPAWN_MAX_Y_RATIO;
+        const maxReachableSpawnY = ['left', 'right'].includes(spawnDirection)
+            ? Math.min(goal.y - minDrop, horizontalSpawnYCap)
+            : goal.y - minDrop;
+        if (spawn.y > maxReachableSpawnY) {
+            spawn.y = this._clampValue(maxReachableSpawnY, 24, 396);
+        }
     }
 
     _resolveSpawnDirection(definition) {
