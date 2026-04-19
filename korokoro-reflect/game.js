@@ -18,6 +18,9 @@ class KorokoroReflect {
         this.STAGE_VARIATION_STEP = 17;
         this.STAGE_VARIATION_SPAN = 70;
         this.STAGE_VARIATION_CENTER = 35;
+        this.STAGE_TUNING_SEED_MULTIPLIER = 37;
+        this.OBSTACLE_STAGE_SEED_MULTIPLIER = 29;
+        this.OBSTACLE_INDEX_SEED_MULTIPLIER = 17;
         this.BALL_RADIUS = 14;
         this.SPAWN_GUIDE_RADIUS = 18;
         this.STAGE_LEVEL_STEP = 20;
@@ -303,7 +306,7 @@ class KorokoroReflect {
     _buildTunedStageOverride(stageNumber, generatedDefinition) {
         const stageProgress = (stageNumber - 1) / Math.max(1, this.STAGE_TOTAL - 1);
         const difficultyTier = Math.floor((stageNumber - 1) / 10);
-        const seed = stageNumber * 37;
+        const seed = stageNumber * this.STAGE_TUNING_SEED_MULTIPLIER;
         const spawn = {
             x: this._clampValue(
                 generatedDefinition.spawn.x + (((seed % 9) - 4) * 1.6),
@@ -384,7 +387,10 @@ class KorokoroReflect {
 
         const maxObstacles = this._getObstacleCapForStage(stageNumber);
         const seeded = obstacles.map((obstacle, index) => {
-            const seed = (stageNumber * 29) + (index * 17);
+            const seed = (
+                (stageNumber * this.OBSTACLE_STAGE_SEED_MULTIPLIER)
+                + (index * this.OBSTACLE_INDEX_SEED_MULTIPLIER)
+            );
             const routeRatio = (index + 1) / (obstacles.length + 1);
             const routeX = spawn.x + ((goal.x - spawn.x) * routeRatio);
             const routeY = spawn.y + ((goal.y - spawn.y) * routeRatio);
