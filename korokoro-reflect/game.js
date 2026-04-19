@@ -117,6 +117,7 @@ class KorokoroReflect {
         this.blockPointerState = null;
         this.previousControlDisabledStates = new Map();
         this.clearOverlayTimerId = null;
+        this.clearOverlayGeneration = 0;
         this._onDocumentPointerDown = (event) => {
             if (!this.menuPanel || !this.menuBtn || this.menuPanel.classList.contains('hidden')) return;
             if (this.menuPanel.contains(event.target) || this.menuBtn.contains(event.target)) return;
@@ -485,6 +486,7 @@ class KorokoroReflect {
         this.draggingBlock = null;
         this.stuckFrames = 0;
         document.body.classList.remove('dragging-tool');
+        this.clearOverlayGeneration += 1;
         if (this.clearOverlayTimerId) {
             clearTimeout(this.clearOverlayTimerId);
             this.clearOverlayTimerId = null;
@@ -1020,12 +1022,12 @@ class KorokoroReflect {
         this._showFxBadge('クリア！', 'clear', 1300);
         this._flashPlayArea('clear-flash');
         this._setNextButtonReady(false);
-        const timerId = setTimeout(() => {
-            if (this.clearOverlayTimerId !== timerId) return;
+        const overlayGeneration = ++this.clearOverlayGeneration;
+        this.clearOverlayTimerId = setTimeout(() => {
+            if (this.clearOverlayGeneration !== overlayGeneration) return;
             this.clearOverlayTimerId = null;
             this._setClearOverlayVisible(true);
         }, this.CLEAR_OVERLAY_DELAY_MS);
-        this.clearOverlayTimerId = timerId;
         this.startBtn.disabled = true;
     }
 
