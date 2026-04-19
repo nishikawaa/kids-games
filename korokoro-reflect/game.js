@@ -34,6 +34,8 @@ class KorokoroReflect {
         this.OBSTACLE_STAGE_SEED_MULTIPLIER = 29;
         this.OBSTACLE_INDEX_SEED_MULTIPLIER = 17;
         this.BALL_RADIUS = 14;
+        this.MOBILE_BALL_RADIUS_SCALE = 2 / 3;
+        this.MOBILE_LAYOUT_MAX_WIDTH = 768;
         this.SPAWN_GUIDE_RADIUS = 18;
         this.STAGE_LEVEL_STEP = 20;
         this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
@@ -75,6 +77,10 @@ class KorokoroReflect {
         this.SPAWN_SPEED_VERTICAL = 2.2;
         this.SPAWN_VERTICAL_BIAS = -0.08;
         this.SPAWN_DOWNWARD_SCALE = 0.08;
+        this.DOWNHILL_ACCEL_FACTOR = 1.003;
+        this.DOWNHILL_MIN_VERTICAL_SPEED = 0.2;
+        this.DOWNHILL_MIN_HORIZONTAL_SPEED = 0.1;
+        this.DOWNHILL_MAX_HORIZONTAL_SPEED = 9;
         this.OBSTACLE_VARIATION_MULTIPLIER = 7;
         this.OBSTACLE_VARIATION_SPAN = 11;
         this.OBSTACLE_VARIATION_CENTER = 5;
@@ -168,6 +174,7 @@ class KorokoroReflect {
         this.spawnGuide = null;
         this.spawnDirectionArrow = null;
         this.ball = null;
+        this.currentBallRadius = this.BALL_RADIUS;
 
         this.isStarted = false;
         this.isCleared = false;
@@ -192,6 +199,7 @@ class KorokoroReflect {
         this._documentPointerListenerBound = false;
 
         this._initRenderer();
+        this._updateBallRadiusForViewport();
         this._bindEvents();
         this._registerCollision();
         this._renderStageListButtons();
@@ -243,7 +251,7 @@ class KorokoroReflect {
             },
             {
                 spawn: { x: 162, y: 396 },
-                spawnDirection: 'up',
+                spawnDirection: 'left',
                 goal: { x: 58, y: 44, r: 22 },
                 maxBlocks: 2,
                 obstacles: [
@@ -667,7 +675,7 @@ class KorokoroReflect {
     _buildStages(stageDefinitions) {
         return stageDefinitions.map((definition) => ({
             spawn: { ...definition.spawn },
-            spawnDirection: definition.spawnDirection || this.DEFAULT_SPAWN_DIRECTION,
+            spawnDirection: this._resolveSpawnDirection(definition),
             spawnSpeed: definition.spawnSpeed,
             goal: { ...definition.goal },
             maxBlocks: definition.maxBlocks,
@@ -675,6 +683,14 @@ class KorokoroReflect {
             availableTools: [...(definition.availableTools ?? this.DEFAULT_AVAILABLE_TOOLS)],
             obstacles: (definition.obstacles ?? []).map((obstacle) => ({ ...obstacle }))
         }));
+    }
+
+    _resolveSpawnDirection(definition) {
+        const direction = definition.spawnDirection || this.DEFAULT_SPAWN_DIRECTION;
+        if (direction !== 'up') return direction;
+        const spawnX = definition?.spawn?.x ?? 0;
+        const goalX = definition?.goal?.x ?? spawnX;
+        return goalX < spawnX ? 'left' : 'right';
     }
 
     _areValidExternalStageDefinitions(stageDefinitions) {
@@ -976,11 +992,18 @@ class KorokoroReflect {
 
         this.width = newWidth;
         this.height = newHeight;
+        this._updateBallRadiusForViewport();
         this.render.canvas.width = newWidth;
         this.render.canvas.height = newHeight;
         this.render.options.width = newWidth;
         this.render.options.height = newHeight;
         this._loadStage(this.stageIndex);
+    }
+
+    _updateBallRadiusForViewport() {
+        const isMobile = window.matchMedia(`(max-width: ${this.MOBILE_LAYOUT_MAX_WIDTH}px)`).matches;
+        const mobileBallRadius = Math.max(6, Math.round(this.BALL_RADIUS * this.MOBILE_BALL_RADIUS_SCALE));
+        this.currentBallRadius = isMobile ? mobileBallRadius : this.BALL_RADIUS;
     }
 
     _setTool(tool) {
@@ -1621,12 +1644,13 @@ class KorokoroReflect {
         this._hideFxBadge();
 
         this.engine.gravity.y = 1.02;
-        const safeSpawn = this._clampCircleCenter(this._scaledStagePoint(this.stage.spawn), this.BALL_RADIUS);
-        this.ball = this.Matter.Bodies.circle(safeSpawn.x, safeSpawn.y, this.BALL_RADIUS, {
+        const ballRadius = this.currentBallRadius || this.BALL_RADIUS;
+        const safeSpawn = this._clampCircleCenter(this._scaledStagePoint(this.stage.spawn), ballRadius);
+        this.ball = this.Matter.Bodies.circle(safeSpawn.x, safeSpawn.y, ballRadius, {
             label: 'ball',
             restitution: 0.8,
-            friction: 0.01,
-            frictionAir: 0.012,
+            friction: 0.008,
+            frictionAir: 0.009,
             density: 0.002,
             render: { fillStyle: '#ef4444' }
         });
@@ -1726,6 +1750,16 @@ class KorokoroReflect {
 
     _tick() {
         if (this.isStarted && this.ball) {
+            if (
+                this.ball.velocity.y > this.DOWNHILL_MIN_VERTICAL_SPEED
+                && Math.abs(this.ball.velocity.x) > this.DOWNHILL_MIN_HORIZONTAL_SPEED
+                && Math.abs(this.ball.velocity.x) < this.DOWNHILL_MAX_HORIZONTAL_SPEED
+            ) {
+                this.Matter.Body.setVelocity(this.ball, {
+                    x: this.ball.velocity.x * this.DOWNHILL_ACCEL_FACTOR,
+                    y: this.ball.velocity.y
+                });
+            }
             const speed = this.ball.speed || 0;
             const y = this.ball.position.y;
 

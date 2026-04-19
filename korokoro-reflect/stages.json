@@ -107,7 +107,7 @@
       "x": 181.75,
       "y": 392.1
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.04,
     "goal": {
       "x": 37.46,
@@ -278,7 +278,7 @@
       "x": 145.1,
       "y": 393.4
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.06,
     "goal": {
       "x": 76.36,
@@ -452,7 +452,7 @@
       "x": 161.35,
       "y": 394.7
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.08,
     "goal": {
       "x": 57.86,
@@ -619,7 +619,7 @@
       "x": 163.2,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.1,
     "goal": {
       "x": 56.16,
@@ -801,7 +801,7 @@
       "x": 179.45,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.12,
     "goal": {
       "x": 37.66,
@@ -992,7 +992,7 @@
       "x": 142.8,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.14,
     "goal": {
       "x": 76.56,
@@ -1182,7 +1182,7 @@
       "x": 159.05,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.16,
     "goal": {
       "x": 73.46,
@@ -1357,7 +1357,7 @@
       "x": 160.9,
       "y": 392.1
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.18,
     "goal": {
       "x": 56.36,
@@ -1578,7 +1578,7 @@
       "x": 162.75,
       "y": 393.4
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.2,
     "goal": {
       "x": 53.26,
@@ -1798,7 +1798,7 @@
       "x": 179,
       "y": 394.7
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.22,
     "goal": {
       "x": 36.16,
@@ -2005,7 +2005,7 @@
       "x": 142.35,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.24,
     "goal": {
       "x": 73.66,
@@ -2218,7 +2218,7 @@
       "x": 158.6,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.26,
     "goal": {
       "x": 71.96,
@@ -2446,7 +2446,7 @@
       "x": 160.45,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.28,
     "goal": {
       "x": 53.46,
@@ -2666,7 +2666,7 @@
       "x": 176.7,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.3,
     "goal": {
       "x": 51.76,
@@ -2896,7 +2896,7 @@
       "x": 178.55,
       "y": 390.8
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.32,
     "goal": {
       "x": 33.26,
@@ -3133,7 +3133,7 @@
       "x": 156.3,
       "y": 393.4
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.34,
     "goal": {
       "x": 72.16,
@@ -3368,7 +3368,7 @@
       "x": 158.15,
       "y": 394.7
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.36,
     "goal": {
       "x": 69.06,
@@ -3590,7 +3590,7 @@
       "x": 160,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.38,
     "goal": {
       "x": 51.96,
@@ -3810,7 +3810,7 @@
       "x": 176.25,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.4,
     "goal": {
       "x": 48.86,
@@ -4031,7 +4031,7 @@
       "x": 139.6,
       "y": 396
     },
-    "spawnDirection": "up",
+    "spawnDirection": "left",
     "spawnSpeed": 2.42,
     "goal": {
       "x": 72.36,
