@@ -678,9 +678,8 @@ class KorokoroReflect {
     _buildStages(stageDefinitions) {
         return stageDefinitions.map((definition) => {
             const spawnDirection = this._resolveSpawnDirection(definition);
-            const spawn = { ...definition.spawn };
             const goal = { ...definition.goal };
-            this._normalizeStageReachability(spawn, goal, spawnDirection);
+            const spawn = this._normalizeStageReachability({ ...definition.spawn }, goal, spawnDirection);
             return {
                 spawn,
                 spawnDirection,
@@ -695,13 +694,16 @@ class KorokoroReflect {
     }
 
     _normalizeStageReachability(spawn, goal, spawnDirection) {
+        const normalizedSpawn = { ...spawn };
         if (
-            !spawn
+            !normalizedSpawn
             || !goal
-            || !Number.isFinite(spawn.y)
+            || !Number.isFinite(normalizedSpawn.x)
+            || !Number.isFinite(normalizedSpawn.y)
+            || !Number.isFinite(goal.x)
             || !Number.isFinite(goal.y)
         ) {
-            return;
+            return normalizedSpawn;
         }
 
         const isHorizontalSpawn = this._isHorizontalSpawnDirection(spawnDirection);
@@ -714,9 +716,10 @@ class KorokoroReflect {
             : goal.y - minDrop;
         const minStageY = this.STAGE_BOUNDARY_MARGIN;
         const maxStageY = this.STAGE_BASE_HEIGHT - this.STAGE_BOUNDARY_MARGIN;
-        if (spawn.y > maxReachableSpawnY) {
-            spawn.y = this._clampValue(maxReachableSpawnY, minStageY, maxStageY);
+        if (normalizedSpawn.y > maxReachableSpawnY) {
+            normalizedSpawn.y = this._clampValue(maxReachableSpawnY, minStageY, maxStageY);
         }
+        return normalizedSpawn;
     }
 
     _resolveSpawnDirection(definition) {
