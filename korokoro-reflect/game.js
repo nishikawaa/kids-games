@@ -114,7 +114,7 @@ class KorokoroReflect {
         this.stuckFrames = 0;
         this.fxTimerId = null;
         this.blockPointerState = null;
-        this.clearActionDisabledState = new Map();
+        this.previousControlDisabledStates = new Map();
         this._onDocumentPointerDown = (event) => {
             if (!this.menuPanel || !this.menuBtn || this.menuPanel.classList.contains('hidden')) return;
             if (this.menuPanel.contains(event.target) || this.menuBtn.contains(event.target)) return;
@@ -384,16 +384,16 @@ class KorokoroReflect {
 
         if (locked) {
             controls.forEach((control) => {
-                this.clearActionDisabledState.set(control, control.disabled);
+                this.previousControlDisabledStates.set(control, control.disabled);
                 control.disabled = true;
             });
             return;
         }
 
-        this.clearActionDisabledState.forEach((prevDisabled, control) => {
+        this.previousControlDisabledStates.forEach((prevDisabled, control) => {
             control.disabled = prevDisabled;
         });
-        this.clearActionDisabledState.clear();
+        this.previousControlDisabledStates.clear();
     }
 
     _loadUnlockedStageCount() {
