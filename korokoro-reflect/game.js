@@ -302,7 +302,7 @@ class KorokoroReflect {
     _mergeStageDefinition(base, override, stageNumber = null) {
         if (!override || typeof override !== 'object') return base;
         if (Array.isArray(override)) {
-            const stageLabel = stageNumber == null ? '' : ` for stage ${stageNumber}`;
+            const stageLabel = (stageNumber === null || stageNumber === undefined) ? '' : ` for stage ${stageNumber}`;
             console.warn(`Invalid stage override format${stageLabel}: expected object but received array.`);
             return base;
         }
@@ -333,7 +333,7 @@ class KorokoroReflect {
     }
 
     _cloneValue(value) {
-        if (value == null || typeof value !== 'object') return value;
+        if (value === null || value === undefined || typeof value !== 'object') return value;
         if (typeof structuredClone === 'function') return structuredClone(value);
         try {
             return JSON.parse(JSON.stringify(value));
