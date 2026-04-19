@@ -1,0 +1,157 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(180deg, #d9f3ff 0%, #fce8ff 100%);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 10px;
+    color: #1f2937;
+}
+
+.game-container {
+    width: min(520px, 100%);
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 20px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.14);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.game-header h1 {
+    font-size: 1.6rem;
+    text-align: center;
+    margin-bottom: 8px;
+}
+
+.status-row {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.status-row span {
+    background: #ffffff;
+    border-radius: 999px;
+    text-align: center;
+    padding: 8px 6px;
+    font-size: 0.92rem;
+    font-weight: 700;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.header-buttons {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.play-area {
+    width: 100%;
+    aspect-ratio: 3 / 4;
+    border-radius: 16px;
+    overflow: hidden;
+    background: linear-gradient(180deg, #f0fbff 0%, #fffef5 100%);
+    touch-action: none;
+    box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0.8);
+}
+
+.play-area canvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.message {
+    text-align: center;
+    min-height: 1.8em;
+    font-weight: 700;
+    color: #374151;
+    padding: 2px 6px;
+}
+
+.toolbox {
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 14px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tool-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    align-items: center;
+}
+
+#stockText {
+    text-align: center;
+    font-weight: 700;
+}
+
+button {
+    border: none;
+    border-radius: 12px;
+    min-height: 48px;
+    padding: 10px 12px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+button:active {
+    transform: scale(0.97);
+}
+
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.primary {
+    background: linear-gradient(135deg, #34d399, #10b981);
+    color: #fff;
+}
+
+.secondary {
+    background: linear-gradient(135deg, #a5b4fc, #818cf8);
+    color: #fff;
+}
+
+.tool-btn {
+    background: #ffffff;
+    color: #111827;
+    box-shadow: 0 4px 12px rgba(31, 41, 55, 0.1);
+}
+
+.tool-btn.active {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #fff;
+}
+
+@media (max-width: 420px) {
+    .game-header h1 {
+        font-size: 1.35rem;
+    }
+
+    .status-row span {
+        font-size: 0.8rem;
+        padding: 7px 4px;
+    }
+
+    button {
+        min-height: 44px;
+        font-size: 0.88rem;
+    }
+}
