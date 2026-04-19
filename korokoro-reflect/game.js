@@ -590,7 +590,7 @@ class KorokoroReflect {
     }
 
     _onPointerDown(event) {
-        if (event.target === this.startBtn || this.startBtn?.contains(event.target)) return;
+        if (this.startBtn?.contains(event.target)) return;
         if (event.cancelable) event.preventDefault();
         if (this.isStarted) return;
 
@@ -688,11 +688,10 @@ class KorokoroReflect {
         }
 
         if (!this.blockPointerState.moved || !this.draggingBlock) return;
-        const isOutside = this._isPointOutsidePlayArea(rawPoint, this.DRAG_DELETE_OUTSIDE_MARGIN);
-        this.blockPointerState.isOutside = isOutside;
+        this.blockPointerState.isOutside = this._isPointOutsidePlayArea(rawPoint, this.DRAG_DELETE_OUTSIDE_MARGIN);
         const safePoint = this._clampBodyPosition(this.draggingBlock, rawPoint);
         this.Matter.Body.setPosition(this.draggingBlock, safePoint);
-        this.draggingBlock.render.opacity = isOutside ? 0.45 : 1;
+        this.draggingBlock.render.opacity = this.blockPointerState.isOutside ? 0.45 : 1;
     }
 
     _onPointerUp(event) {
