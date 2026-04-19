@@ -38,6 +38,7 @@ class KorokoroReflect {
         this.placedBlocks = [];
         this.fixedBodies = [];
         this.goalSensor = null;
+        this.spawnGuide = null;
         this.ball = null;
         this.isStarted = false;
         this.isPaused = false;
@@ -162,13 +163,14 @@ class KorokoroReflect {
         this._buildWalls();
         this._buildGoal();
         this._buildObstacles();
+        this._buildSpawnGuide();
         if (wasPaused) {
             this.Matter.Runner.run(this.runner, this.engine);
         }
 
         this.stageText.textContent = `ステージ ${this.stageIndex + 1} / ${this.stages.length}`;
         this.stateText.textContent = '配置中';
-        this.messageText.textContent = 'ブロックを置いて「スタート」を押そう！';
+        this.messageText.textContent = '赤い輪がスタート、緑の円がゴールだよ。ブロックを置いて「スタート」を押そう！';
 
         this.startBtn.disabled = false;
         this.pauseBtn.disabled = true;
@@ -226,6 +228,18 @@ class KorokoroReflect {
             this.fixedBodies.push(body);
         });
         this.Matter.World.add(this.world, this.fixedBodies);
+    }
+
+    _buildSpawnGuide() {
+        const s = this.stage.spawn;
+        this.spawnGuide = this.Matter.Bodies.circle(s.x, s.y, 18, {
+            isStatic: true,
+            isSensor: true,
+            label: 'spawn-guide',
+            collisionFilter: { mask: 0 },
+            render: { fillStyle: 'rgba(239, 68, 68, 0.15)', strokeStyle: '#dc2626', lineWidth: 3 }
+        });
+        this.Matter.World.add(this.world, this.spawnGuide);
     }
 
     _onPointerDown(event) {
