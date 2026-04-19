@@ -36,6 +36,7 @@
         <main>
             <div id="playArea" class="play-area">
                 <div id="fxBadge" class="fx-badge hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+                <button id="startBtn" class="primary floating-start">スタート</button>
             </div>
         </main>
 
@@ -65,13 +66,7 @@
                 </div>
                 <span id="stockText" class="sr-only">のこり: 1</span>
             </div>
-            <div class="tool-row utility-row">
-                <button id="deleteBtn" class="tool-btn">削除</button>
-            </div>
-            <div class="tool-row">
-                <button id="startBtn" class="primary">スタート</button>
-                <button id="nextBtn" class="primary legacy-next-btn" disabled>つぎのステージ</button>
-            </div>
+            <button id="nextBtn" class="primary legacy-next-btn" disabled>つぎのステージ</button>
         </footer>
 
         <section id="stageSelectModal" class="overlay hidden" aria-hidden="true">
@@ -88,7 +83,7 @@
                 <ol class="help-list">
                     <li>下の形アイコンを指でドラッグして、プレイエリアに置きます。</li>
                     <li>置いたブロックはタップで回転、ドラッグで動かせます。</li>
-                    <li>削除で配置を調整し、スタートを押します。</li>
+                    <li>置いたブロックを画面外へドラッグすると削除できます。</li>
                     <li>赤い輪からボールが出て、緑の円に入るとクリアです。</li>
                 </ol>
                 <button id="closeHelpBtn" class="primary">OK</button>

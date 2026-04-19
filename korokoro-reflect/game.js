@@ -47,6 +47,7 @@ class KorokoroReflect {
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
         this.BLOCK_TAP_MOVE_THRESHOLD = 9;
         this.BLOCK_TAP_MOVE_THRESHOLD_SQUARED = this.BLOCK_TAP_MOVE_THRESHOLD * this.BLOCK_TAP_MOVE_THRESHOLD;
+        this.DRAG_DELETE_OUTSIDE_MARGIN = 6;
         this.CLEAR_OVERLAY_DELAY_MS = 650;
 
         this.stageText = document.getElementById('stageText');
@@ -59,7 +60,6 @@ class KorokoroReflect {
         this.startBtn = document.getElementById('startBtn');
         this.resetBtn = document.getElementById('resetBtn');
         this.nextBtn = document.getElementById('nextBtn');
-        this.deleteBtn = document.getElementById('deleteBtn');
 
         this.selectRectBtn = document.getElementById('selectRectBtn');
         this.selectCircleBtn = document.getElementById('selectCircleBtn');
@@ -254,7 +254,6 @@ class KorokoroReflect {
         this.startBtn.addEventListener('click', () => this._startBall());
         this.resetBtn.addEventListener('click', () => this._loadStage(this.stageIndex));
         this.nextBtn.addEventListener('click', () => this._onNextStage());
-        this.deleteBtn.addEventListener('click', () => this._deleteSelected());
 
         this._bindToolDragEvents(this.selectRectBtn, 'rect');
         this._bindToolDragEvents(this.selectCircleBtn, 'circle');
@@ -378,7 +377,6 @@ class KorokoroReflect {
         const controls = [
             this.startBtn,
             this.resetBtn,
-            this.deleteBtn,
             this.menuBtn,
             this.selectRectBtn,
             this.selectCircleBtn,
@@ -592,6 +590,7 @@ class KorokoroReflect {
     }
 
     _onPointerDown(event) {
+        if (event.target === this.startBtn || this.startBtn?.contains(event.target)) return;
         if (event.cancelable) event.preventDefault();
         if (this.isStarted) return;
 
@@ -608,7 +607,8 @@ class KorokoroReflect {
                 pointerId: event.pointerId,
                 block: hit,
                 startPoint: point,
-                moved: false
+                moved: false,
+                isOutside: false
             };
             this.draggingBlock = null;
             this._syncSelectionUI();
@@ -674,12 +674,12 @@ class KorokoroReflect {
         if (this.isStarted || !this.blockPointerState) return;
         if (this.blockPointerState.pointerId !== event.pointerId) return;
 
-        const point = this._eventToWorldPoint(event);
-        if (!point) return;
+        const rawPoint = this._clientToPlayAreaPointRaw(event.clientX, event.clientY);
+        if (!rawPoint) return;
 
         if (!this.blockPointerState.moved) {
-            const dx = point.x - this.blockPointerState.startPoint.x;
-            const dy = point.y - this.blockPointerState.startPoint.y;
+            const dx = rawPoint.x - this.blockPointerState.startPoint.x;
+            const dy = rawPoint.y - this.blockPointerState.startPoint.y;
             const movedDistanceSquared = (dx * dx) + (dy * dy);
             if (movedDistanceSquared >= this.BLOCK_TAP_MOVE_THRESHOLD_SQUARED) {
                 this.blockPointerState.moved = true;
@@ -688,8 +688,11 @@ class KorokoroReflect {
         }
 
         if (!this.blockPointerState.moved || !this.draggingBlock) return;
-        const safePoint = this._clampBodyPosition(this.draggingBlock, point);
+        const isOutside = this._isPointOutsidePlayArea(rawPoint, this.DRAG_DELETE_OUTSIDE_MARGIN);
+        this.blockPointerState.isOutside = isOutside;
+        const safePoint = this._clampBodyPosition(this.draggingBlock, rawPoint);
         this.Matter.Body.setPosition(this.draggingBlock, safePoint);
+        this.draggingBlock.render.opacity = isOutside ? 0.45 : 1;
     }
 
     _onPointerUp(event) {
@@ -708,6 +711,18 @@ class KorokoroReflect {
             && this.blockPointerState.block
         ) {
             this._rotateBlock(this.blockPointerState.block);
+        } else if (
+            !this.isStarted
+            && this.blockPointerState
+            && this.blockPointerState.pointerId === event?.pointerId
+            && this.blockPointerState.moved
+            && this.blockPointerState.block
+            && this.blockPointerState.isOutside
+        ) {
+            this._removePlacedBlock(this.blockPointerState.block);
+        }
+        if (this.blockPointerState?.block) {
+            this.blockPointerState.block.render.opacity = 1;
         }
         this.blockPointerState = null;
         this.draggingBlock = null;
@@ -782,14 +797,28 @@ class KorokoroReflect {
     }
 
     _clientToPlayAreaPoint(clientX, clientY) {
+        const point = this._clientToPlayAreaPointRaw(clientX, clientY);
+        if (!point) return null;
+        if (this._isPointOutsidePlayArea(point)) return null;
+        return point;
+    }
+
+    _clientToPlayAreaPointRaw(clientX, clientY) {
         const rect = this.playArea.getBoundingClientRect();
         if (!rect.width || !rect.height) return null;
 
         const x = clientX - rect.left;
         const y = clientY - rect.top;
-        if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
-
         return { x, y };
+    }
+
+    _isPointOutsidePlayArea(point, margin = 0) {
+        return (
+            point.x < -margin
+            || point.y < -margin
+            || point.x > this.width + margin
+            || point.y > this.height + margin
+        );
     }
 
     _placeToolAt(tool, point) {
@@ -934,10 +963,15 @@ class KorokoroReflect {
         this.Matter.Body.rotate(block, this.ROTATION_INCREMENT);
     }
 
-    _deleteSelected() {
-        if (this.isStarted || !this.selectedBlock) return;
-        this.Matter.World.remove(this.world, this.selectedBlock);
-        this.placedBlocks = this.placedBlocks.filter((body) => body !== this.selectedBlock);
+    _removePlacedBlock(block) {
+        if (!block) return;
+        this.Matter.World.remove(this.world, block);
+        this.placedBlocks = this.placedBlocks.filter((body) => body !== block);
+        if (this.selectedBlock !== block) {
+            this._syncSelectionUI();
+            this._updateBlockStock();
+            return;
+        }
         this.selectedBlock = null;
         this._syncSelectionUI();
         this._updateBlockStock();
