@@ -36,6 +36,12 @@ class KorokoroReflect {
         this.MIN_OBSTACLE_INNER_RADIUS = 4;
         this.BUMPER_UNLOCK_STAGE = 5;
         this.BUMPER_RESTITUTION = 1.16;
+        this.BUMPER_BASE_X = 106;
+        this.BUMPER_X_VARIATION_STEP = 13;
+        this.BUMPER_X_VARIATION_SPAN = 130;
+        this.BUMPER_BASE_Y = 178;
+        this.BUMPER_Y_VARIATION_STEP = 17;
+        this.BUMPER_Y_VARIATION_SPAN = 154;
         this.STAR_PHYSICS_RADIUS_SCALE = 0.8;
         this.STAR_SPRITE_SCALE = 0.4;
         this.SPAWN_SPEED_HORIZONTAL = 2.6;
@@ -228,7 +234,7 @@ class KorokoroReflect {
                 )),
                 ...this._buildDifficultyObstacles(level, index)
             ];
-            if (stageNumber >= this.BUMPER_UNLOCK_STAGE) {
+            if ((index + 1) >= this.BUMPER_UNLOCK_STAGE) {
                 obstacles.push(this._buildBumperObstacle(index, level));
             }
 
@@ -260,8 +266,16 @@ class KorokoroReflect {
     _buildBumperObstacle(stageIndex, level) {
         return {
             type: 'bumper',
-            x: this._clampValue(106 + ((stageIndex * 13) % 130), 36, 284),
-            y: this._clampValue(178 + ((stageIndex * 17) % 154), 78, 386),
+            x: this._clampValue(
+                this.BUMPER_BASE_X + ((stageIndex * this.BUMPER_X_VARIATION_STEP) % this.BUMPER_X_VARIATION_SPAN),
+                36,
+                284
+            ),
+            y: this._clampValue(
+                this.BUMPER_BASE_Y + ((stageIndex * this.BUMPER_Y_VARIATION_STEP) % this.BUMPER_Y_VARIATION_SPAN),
+                78,
+                386
+            ),
             r: Math.max(this.MIN_OBSTACLE_RADIUS + 2, 16 - Math.floor(level / 3))
         };
     }
