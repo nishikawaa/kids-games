@@ -47,6 +47,7 @@ class KorokoroReflect {
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
         this.BLOCK_TAP_MOVE_THRESHOLD = 9;
         this.BLOCK_TAP_MOVE_THRESHOLD_SQUARED = this.BLOCK_TAP_MOVE_THRESHOLD * this.BLOCK_TAP_MOVE_THRESHOLD;
+        // small tolerance so dragging slightly outside the frame feels like a natural delete gesture
         this.DRAG_DELETE_OUTSIDE_MARGIN = 6;
         this.CLEAR_OVERLAY_DELAY_MS = 650;
 
@@ -816,6 +817,8 @@ class KorokoroReflect {
     }
 
     _isPointOutsidePlayArea(point, margin = 0) {
+        // Margin allows treating points just beyond the visible frame as "outside"
+        // (used for drag-to-delete without requiring a large off-screen movement).
         return (
             point.x < -margin
             || point.y < -margin
