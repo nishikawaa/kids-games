@@ -38,6 +38,8 @@ class KorokoroReflect {
         this.DIFFICULTY_MIN_OBSTACLE_WIDTH = 56;
         this.DIFFICULTY_MAX_OBSTACLE_WIDTH = 104;
         this.STAR_TEXTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E";
+        this.FAIL_MESSAGE_DURATION = 3000;
+        this.STUCK_MESSAGE_DURATION = 4300;
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -472,6 +474,7 @@ class KorokoroReflect {
         this.placedBlocks.push(body);
         this.Matter.World.add(this.world, body);
         this.selectedBlock = body;
+        this._showPlacementSpark(body.position);
 
         this._syncSelectionUI();
         this._updateBlockStock();
@@ -609,6 +612,16 @@ class KorokoroReflect {
         return Math.min(this.stages.length, this.stageIndex + 2);
     }
 
+    _showPlacementSpark(point) {
+        if (!this.playArea || !point) return;
+        const spark = document.createElement('span');
+        spark.className = 'placement-spark';
+        spark.style.left = `${point.x}px`;
+        spark.style.top = `${point.y}px`;
+        spark.addEventListener('animationend', () => spark.remove(), { once: true });
+        this.playArea.appendChild(spark);
+    }
+
     _showFxBadge(text, mode, durationMs) {
         if (!this.fxBadge) return;
         this.fxBadge.textContent = text;
@@ -718,7 +731,8 @@ class KorokoroReflect {
         this.engine.gravity.y = 0;
         this.startBtn.disabled = false;
         this.playArea.classList.remove('stuck-fail');
-        this._showFxBadge(reasonText, 'fail', 1500);
+        const durationMs = reasonType === 'stuck' ? this.STUCK_MESSAGE_DURATION : this.FAIL_MESSAGE_DURATION;
+        this._showFxBadge(reasonText, 'fail', durationMs);
         this._flashPlayArea('fail-flash');
         if (reasonType === 'stuck') {
             this.playArea.classList.add('stuck-fail');
@@ -748,11 +762,11 @@ class KorokoroReflect {
             const y = this.ball.position.y;
 
             if (y > this.height + 26) {
-                this._onFail('ボールが落ちちゃった！リトライしよう。', 'fall');
+                this._onFail('ぼーるがおちちゃった！りとらいしよう。', 'fall');
             } else if (speed < this.STUCK_MIN_SPEED && y > this.height * this.STUCK_CHECK_HEIGHT_RATIO) {
                 this.stuckFrames += 1;
                 if (this.stuckFrames > this.STUCK_MAX_FRAMES) {
-                    this._onFail('ボールが止まったよ。配置を変えてみよう！', 'stuck');
+                    this._onFail('ぼーるがとまったよ。はいちをかえてみよう！', 'stuck');
                 }
             } else {
                 this.stuckFrames = 0;
