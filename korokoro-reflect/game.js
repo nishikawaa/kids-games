@@ -40,6 +40,8 @@ class KorokoroReflect {
         this.STAR_TEXTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E";
         this.FAIL_BADGE_DURATION = 3000;
         this.STUCK_BADGE_DURATION = 4300;
+        this.MIN_REQUIRED_BLOCKS = 1;
+        this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -57,6 +59,11 @@ class KorokoroReflect {
         this.selectRectBtn = document.getElementById('selectRectBtn');
         this.selectCircleBtn = document.getElementById('selectCircleBtn');
         this.selectStarBtn = document.getElementById('selectStarBtn');
+        this.toolButtons = {
+            rect: this.selectRectBtn,
+            circle: this.selectCircleBtn,
+            star: this.selectStarBtn
+        };
 
         this.stageListBtn = document.getElementById('stageListBtn');
         this.helpBtn = document.getElementById('helpBtn');
@@ -89,6 +96,12 @@ class KorokoroReflect {
         this.isStarted = false;
         this.isCleared = false;
         this.draggingBlock = null;
+        this.paletteDragTool = null;
+        this.paletteDragPointerId = null;
+        this.paletteDragSourceBtn = null;
+        this.dragGhost = null;
+        this.dragGhostIcon = null;
+        this.lastRippleAtMs = 0;
         this.stuckFrames = 0;
         this.fxTimerId = null;
 
@@ -102,6 +115,7 @@ class KorokoroReflect {
         this._tick();
 
         this._showHelpIfFirstTime();
+        this._initToolDragGhost();
     }
 
     _buildStages(total) {
@@ -157,10 +171,21 @@ class KorokoroReflect {
             }));
 
             const extraObstacles = this._buildDifficultyObstacles(level, offset);
+            const stageNumber = index + 1;
+            const availableTools = stageNumber < 4
+                ? ['rect']
+                : stageNumber < 9
+                    ? ['rect', 'circle']
+                    : ['rect', 'circle', 'star'];
             return {
                 spawn,
                 goal,
                 maxBlocks: Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
+                minRequiredBlocks: Math.min(
+                    this.MIN_REQUIRED_BLOCKS,
+                    Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks)
+                ),
+                availableTools,
                 obstacles: [...obstacles, ...extraObstacles]
             };
         });
@@ -215,9 +240,9 @@ class KorokoroReflect {
         this.rotateBtn.addEventListener('click', () => this._rotateSelected());
         this.deleteBtn.addEventListener('click', () => this._deleteSelected());
 
-        this.selectRectBtn.addEventListener('click', () => this._setTool('rect'));
-        this.selectCircleBtn.addEventListener('click', () => this._setTool('circle'));
-        this.selectStarBtn.addEventListener('click', () => this._setTool('star'));
+        this._bindToolDragEvents(this.selectRectBtn, 'rect');
+        this._bindToolDragEvents(this.selectCircleBtn, 'circle');
+        this._bindToolDragEvents(this.selectStarBtn, 'star');
 
         this.stageListBtn.addEventListener('click', () => this._toggleModal(this.stageSelectModal, true));
         this.closeStageListBtn.addEventListener('click', () => this._toggleModal(this.stageSelectModal, false));
@@ -237,6 +262,13 @@ class KorokoroReflect {
         this.playArea.addEventListener('pointercancel', (event) => this._onPointerUp(event));
 
         window.addEventListener('resize', () => this._resizeAndReload());
+    }
+
+    _bindToolDragEvents(button, tool) {
+        button.addEventListener('pointerdown', (event) => this._onToolPointerDown(event, tool));
+        button.addEventListener('pointermove', (event) => this._onToolPointerMove(event));
+        button.addEventListener('pointerup', (event) => this._onToolPointerUp(event));
+        button.addEventListener('pointercancel', (event) => this._onToolPointerCancel(event));
     }
 
     _renderStageListButtons() {
@@ -336,10 +368,26 @@ class KorokoroReflect {
     }
 
     _setTool(tool) {
+        if (!this._isToolAvailable(tool)) return;
         this.selectedTool = tool;
         this.selectRectBtn.classList.toggle('active', tool === 'rect');
         this.selectCircleBtn.classList.toggle('active', tool === 'circle');
         this.selectStarBtn.classList.toggle('active', tool === 'star');
+    }
+
+    _isToolAvailable(tool) {
+        return this.stage?.availableTools?.includes(tool);
+    }
+
+    _syncToolAvailability() {
+        const availableTools = this.stage?.availableTools ?? ['rect'];
+        Object.entries(this.toolButtons).forEach(([tool, button]) => {
+            button.disabled = !availableTools.includes(tool);
+        });
+        if (!availableTools.includes(this.selectedTool)) {
+            this.selectedTool = availableTools[0];
+        }
+        this._setTool(this.selectedTool);
     }
 
     _loadStage(index) {
@@ -373,6 +421,7 @@ class KorokoroReflect {
         this._hideFxBadge();
 
         this._updateBlockStock();
+        this._syncToolAvailability();
         this._syncSelectionUI();
         this._syncStageListHighlight();
     }
@@ -459,33 +508,18 @@ class KorokoroReflect {
         const point = this._eventToWorldPoint(event);
         if (!point) return;
 
-        if (typeof event.pointerId === 'number') {
-            this.playArea.setPointerCapture(event.pointerId);
-        }
-
         const hit = this.Matter.Query.point(this.placedBlocks, point)[0];
         if (hit) {
+            if (typeof event.pointerId === 'number') {
+                this.playArea.setPointerCapture(event.pointerId);
+            }
             this.selectedBlock = hit;
             this.draggingBlock = hit;
             this._syncSelectionUI();
             return;
         }
-
-        if (this.placedBlocks.length >= this.stage.maxBlocks) {
-            this._showFxBadge('これ以上は置けないよ！', 'fail', 900);
-            return;
-        }
-
-        const body = this._createToolBody(this.selectedTool, point);
-        if (!body) return;
-
-        this.placedBlocks.push(body);
-        this.Matter.World.add(this.world, body);
-        this.selectedBlock = body;
-        this._showPlacementSpark(body.position);
-
+        this.selectedBlock = null;
         this._syncSelectionUI();
-        this._updateBlockStock();
     }
 
     _createToolBody(tool, point) {
@@ -560,15 +594,98 @@ class KorokoroReflect {
         this.draggingBlock = null;
     }
 
+    _onToolPointerDown(event, tool) {
+        if (event.cancelable) event.preventDefault();
+        if (this.isStarted) return;
+        if (!this._isToolAvailable(tool)) return;
+        if (this.placedBlocks.length >= this.stage.maxBlocks) {
+            this._showFxBadge('これ以上は置けないよ！', 'fail', 900);
+            return;
+        }
+        this._setTool(tool);
+        this.paletteDragTool = tool;
+        this.paletteDragPointerId = event.pointerId;
+        this.paletteDragSourceBtn = event.currentTarget;
+        if (
+            typeof event.pointerId === 'number'
+            && this.paletteDragSourceBtn?.setPointerCapture
+        ) {
+            this.paletteDragSourceBtn.setPointerCapture(event.pointerId);
+        }
+        this._updateToolDragGhost(event.clientX, event.clientY);
+        this._setToolDragGhostVisible(true);
+    }
+
+    _onToolPointerMove(event) {
+        if (event.cancelable) event.preventDefault();
+        if (this.paletteDragPointerId !== event.pointerId || !this.paletteDragTool) return;
+        this._updateToolDragGhost(event.clientX, event.clientY);
+    }
+
+    _onToolPointerUp(event) {
+        if (event?.cancelable) event.preventDefault();
+        if (this.paletteDragPointerId !== event.pointerId || !this.paletteDragTool) return;
+        this._releasePaletteDragPointer(event);
+        const dropPoint = this._clientToPlayAreaPoint(event.clientX, event.clientY);
+        if (dropPoint) {
+            this._placeToolAt(this.paletteDragTool, dropPoint);
+        }
+        this._endToolDrag();
+    }
+
+    _onToolPointerCancel(event) {
+        if (this.paletteDragPointerId !== event.pointerId || !this.paletteDragTool) return;
+        this._releasePaletteDragPointer(event);
+        this._endToolDrag();
+    }
+
+    _releasePaletteDragPointer(event) {
+        if (
+            this.paletteDragSourceBtn
+            && typeof event?.pointerId === 'number'
+            && this.paletteDragSourceBtn.hasPointerCapture?.(event.pointerId)
+        ) {
+            this.paletteDragSourceBtn.releasePointerCapture(event.pointerId);
+        }
+    }
+
+    _endToolDrag() {
+        this.paletteDragTool = null;
+        this.paletteDragPointerId = null;
+        this.paletteDragSourceBtn = null;
+        this._setToolDragGhostVisible(false);
+    }
+
     _eventToWorldPoint(event) {
+        return this._clientToPlayAreaPoint(event.clientX, event.clientY);
+    }
+
+    _clientToPlayAreaPoint(clientX, clientY) {
         const rect = this.playArea.getBoundingClientRect();
         if (!rect.width || !rect.height) return null;
 
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
         if (x < 0 || y < 0 || x > rect.width || y > rect.height) return null;
 
         return { x, y };
+    }
+
+    _placeToolAt(tool, point) {
+        if (this.isStarted) return;
+        if (!this._isToolAvailable(tool)) return;
+        if (this.placedBlocks.length >= this.stage.maxBlocks) {
+            this._showFxBadge('これ以上は置けないよ！', 'fail', 900);
+            return;
+        }
+        const body = this._createToolBody(tool, point);
+        if (!body) return;
+        this.placedBlocks.push(body);
+        this.Matter.World.add(this.world, body);
+        this.selectedBlock = body;
+        this._showPlacementSpark(body.position);
+        this._syncSelectionUI();
+        this._updateBlockStock();
     }
 
     _clampPointWithHalfExtents(point, halfWidth, halfHeight) {
@@ -628,6 +745,42 @@ class KorokoroReflect {
         spark.style.top = `${point.y}px`;
         spark.addEventListener('animationend', () => spark.remove(), { once: true });
         this.playArea.appendChild(spark);
+    }
+
+    _showBounceRipple(point) {
+        if (!this.playArea || !point) return;
+        const now = performance.now();
+        if (now - this.lastRippleAtMs < this.BOUNCE_RIPPLE_MIN_INTERVAL_MS) return;
+        this.lastRippleAtMs = now;
+        const ripple = document.createElement('span');
+        ripple.className = 'bounce-ripple';
+        ripple.style.left = `${point.x}px`;
+        ripple.style.top = `${point.y}px`;
+        ripple.addEventListener('animationend', () => ripple.remove(), { once: true });
+        this.playArea.appendChild(ripple);
+    }
+
+    _initToolDragGhost() {
+        this.dragGhost = document.createElement('span');
+        this.dragGhost.className = 'tool-drag-ghost hidden';
+        this.dragGhostIcon = document.createElement('span');
+        this.dragGhostIcon.className = 'tool-icon rect-icon';
+        this.dragGhost.appendChild(this.dragGhostIcon);
+        document.body.appendChild(this.dragGhost);
+    }
+
+    _setToolDragGhostVisible(visible) {
+        if (!this.dragGhost) return;
+        this.dragGhost.classList.toggle('hidden', !visible);
+    }
+
+    _updateToolDragGhost(clientX, clientY) {
+        if (!this.dragGhost || !this.dragGhostIcon || !this.paletteDragTool) return;
+        this.dragGhost.style.left = `${clientX}px`;
+        this.dragGhost.style.top = `${clientY}px`;
+        this.dragGhostIcon.className = `tool-icon ${this.paletteDragTool}-icon`;
+        const canDrop = Boolean(this._clientToPlayAreaPoint(clientX, clientY));
+        this.dragGhost.classList.toggle('can-drop', canDrop);
     }
 
     _showFxBadge(text, mode, durationMs) {
@@ -697,6 +850,11 @@ class KorokoroReflect {
 
     _startBall() {
         if (this.isStarted) return;
+        const requiredBlocks = this.stage.minRequiredBlocks ?? this.MIN_REQUIRED_BLOCKS;
+        if (this.placedBlocks.length < requiredBlocks) {
+            this._showFxBadge('ブロックを1つおいてから スタートしよう！', 'fail', 1300);
+            return;
+        }
 
         this.isStarted = true;
         this.startBtn.disabled = true;
@@ -724,6 +882,9 @@ class KorokoroReflect {
                 if (labels.includes('goal') && labels.includes('ball')) {
                     this._onStageClear();
                     break;
+                }
+                if (labels.includes('ball') && !labels.includes('goal')) {
+                    this._showBounceRipple(this.ball.position);
                 }
             }
         });
