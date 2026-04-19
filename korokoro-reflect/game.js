@@ -27,6 +27,7 @@ class KorokoroReflect {
         this.OBSTACLE_SHIFT_STEP = 0.1;
         this.STAGE_UNLOCK_KEY = 'korokoroReflectUnlockedStageV1';
         this.STAGE_TOTAL = 100;
+        this.STAR_TEXTURE = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E";
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -145,7 +146,7 @@ class KorokoroReflect {
             return {
                 spawn,
                 goal,
-                maxBlocks: Math.max(1, template.maxBlocks - Math.floor(level / 3)),
+                maxBlocks: Math.max(1, template.maxBlocks - Math.floor(level / 6)),
                 obstacles: [...obstacles, ...extraObstacles]
             };
         });
@@ -496,7 +497,7 @@ class KorokoroReflect {
                     strokeStyle: '#d97706',
                     lineWidth: 1,
                     sprite: {
-                        texture: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cpolygon points='60,6 74,43 114,43 82,66 94,106 60,82 26,106 38,66 6,43 46,43' fill='%23fbbf24' stroke='%23d97706' stroke-width='8' stroke-linejoin='round'/%3E%3C/svg%3E",
+                        texture: this.STAR_TEXTURE,
                         xScale: 0.4,
                         yScale: 0.4
                     }
@@ -684,7 +685,7 @@ class KorokoroReflect {
         this._syncStageButtonsLock();
         this._showFxBadge('クリア！', 'clear', 1300);
         this._flashPlayArea('clear-flash');
-        this.nextBtn.disabled = this.stageIndex + 1 >= this.unlockedStageCount;
+        this.nextBtn.disabled = this.stageIndex + 1 >= this.stages.length;
         this.startBtn.disabled = true;
     }
 
