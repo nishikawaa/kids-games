@@ -253,7 +253,6 @@ class KorokoroReflect {
 
     _bindEvents() {
         this.startBtn.addEventListener('click', () => this._startBall());
-        this.startBtn.addEventListener('pointerdown', (event) => event.stopPropagation());
         this.resetBtn.addEventListener('click', () => this._loadStage(this.stageIndex));
         this.nextBtn.addEventListener('click', () => this._onNextStage());
 

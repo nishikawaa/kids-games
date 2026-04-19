@@ -148,16 +148,6 @@ main {
     display: block;
 }
 
-.floating-start {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    z-index: 5;
-    min-width: 110px;
-    min-height: 44px;
-    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.38);
-}
-
 .toolbox {
     background: rgba(255, 255, 255, 0.75);
     border-radius: 14px;
@@ -185,6 +175,15 @@ main {
 
 .stock-row {
     display: block;
+}
+
+.start-control-row {
+    grid-template-columns: 1fr;
+}
+
+.start-control-btn {
+    width: 100%;
+    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.38);
 }
 
 .stock-meter {
