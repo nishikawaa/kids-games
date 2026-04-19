@@ -246,7 +246,7 @@ class KorokoroReflect {
             isStatic: true,
             restitution: 0.92,
             friction: 0.04,
-            render: { fillStyle: '#60a5fa', strokeStyle: '#2563eb', lineWidth: 0 }
+            render: { fillStyle: '#60a5fa', strokeStyle: '#2563eb', lineWidth: 1 }
         });
         this.placedBlocks.push(block);
         this.Matter.World.add(this.world, block);
