@@ -86,6 +86,7 @@ main {
     top: 0;
 }
 
+.header-icon-btn,
 .menu-toggle {
     min-height: 40px;
     min-width: 44px;
