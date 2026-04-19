@@ -109,6 +109,11 @@ class KorokoroReflect {
         this.lastRippleAtMs = 0;
         this.stuckFrames = 0;
         this.fxTimerId = null;
+        this._onDocumentPointerDown = (event) => {
+            if (!this.menuPanel || !this.menuBtn || this.menuPanel.classList.contains('hidden')) return;
+            if (this.menuPanel.contains(event.target) || this.menuBtn.contains(event.target)) return;
+            this._toggleHeaderMenu(false);
+        };
 
         this._initRenderer();
         this._bindEvents();
@@ -267,11 +272,8 @@ class KorokoroReflect {
         this.helpModal.addEventListener('click', (event) => {
             if (event.target === this.helpModal) this._closeHelp();
         });
-        document.addEventListener('pointerdown', (event) => {
-            if (!this.menuPanel || this.menuPanel.classList.contains('hidden')) return;
-            if (this.menuPanel.contains(event.target) || this.menuBtn?.contains(event.target)) return;
-            this._toggleHeaderMenu(false);
-        });
+        document.removeEventListener('pointerdown', this._onDocumentPointerDown);
+        document.addEventListener('pointerdown', this._onDocumentPointerDown);
 
         this.playArea.addEventListener('pointerdown', (event) => this._onPointerDown(event));
         this.playArea.addEventListener('pointermove', (event) => this._onPointerMove(event));
