@@ -97,8 +97,7 @@ class KorokoroReflect {
 
         this.render = null;
         this.world = this.engine.world;
-        this.stageDefinitions = this._buildStageDefinitions(this.STAGE_TOTAL);
-        this.stages = this._buildStages(this.stageDefinitions);
+        this.stages = this._buildStages(this._buildStageDefinitions(this.STAGE_TOTAL));
         this.stageIndex = 0;
         this.unlockedStageCount = this._loadUnlockedStageCount();
         this.stageButtons = [];
