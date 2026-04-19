@@ -222,19 +222,18 @@ class KorokoroReflect {
                 x: this._clampValue(template.spawn.x + variationStep * 0.55, 24, 296),
                 y: this._clampValue(template.spawn.y + ((index % 5) - 2) * 5, 24, 396)
             };
-            const goal = {
+            const goal = this._ensureReachableGoal(spawn, {
                 x: this._clampValue(template.goal.x - variationStep * 0.58, 26, 294),
                 y: this._clampValue(template.goal.y - ((index + 2) % 4) * 6, 30, 398),
                 r: Math.max(this.MIN_GOAL_RADIUS, template.goal.r - Math.floor(level / 2))
-            };
-            const reachableGoal = this._ensureReachableGoal(spawn, goal, template.spawnDirection);
+            }, template.spawnDirection);
             const obstacles = [
                 ...template.obstacles.map((obstacle, obstacleIndex) => (
                     this._createStageObstacleVariant(obstacle, index, obstacleIndex, level)
                 )),
                 ...this._buildDifficultyObstacles(level, index)
             ];
-            if ((index + 1) >= this.BUMPER_UNLOCK_STAGE) {
+            if (stageNumber >= this.BUMPER_UNLOCK_STAGE) {
                 obstacles.push(this._buildBumperObstacle(index, level));
             }
 
@@ -244,7 +243,7 @@ class KorokoroReflect {
                 spawnSpeed: ['left', 'right'].includes(template.spawnDirection)
                     ? this.SPAWN_SPEED_HORIZONTAL
                     : this.SPAWN_SPEED_VERTICAL,
-                goal: reachableGoal,
+                goal,
                 maxBlocks: Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
                 minRequiredBlocks: this.MIN_REQUIRED_BLOCKS,
                 availableTools,
