@@ -46,6 +46,7 @@ class KorokoroReflect {
         this.DEFAULT_AVAILABLE_TOOLS = ['rect'];
         this.BOUNCE_RIPPLE_MIN_INTERVAL_MS = 80;
         this.BLOCK_TAP_MOVE_THRESHOLD = 9;
+        this.BLOCK_TAP_MOVE_THRESHOLD_SQUARED = this.BLOCK_TAP_MOVE_THRESHOLD * this.BLOCK_TAP_MOVE_THRESHOLD;
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -624,7 +625,7 @@ class KorokoroReflect {
             const dx = point.x - this.blockPointerState.startPoint.x;
             const dy = point.y - this.blockPointerState.startPoint.y;
             const movedDistanceSquared = (dx * dx) + (dy * dy);
-            if (movedDistanceSquared >= this.BLOCK_TAP_MOVE_THRESHOLD * this.BLOCK_TAP_MOVE_THRESHOLD) {
+            if (movedDistanceSquared >= this.BLOCK_TAP_MOVE_THRESHOLD_SQUARED) {
                 this.blockPointerState.moved = true;
                 this.draggingBlock = this.blockPointerState.block;
             }
