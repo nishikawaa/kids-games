@@ -42,6 +42,8 @@ class KorokoroReflect {
         this.BUMPER_BASE_Y = 178;
         this.BUMPER_Y_VARIATION_STEP = 17;
         this.BUMPER_Y_VARIATION_SPAN = 154;
+        this.BUMPER_PATH_RATIO_BASE = 0.56;
+        this.BUMPER_PATH_RATIO_VARIATION = 0.16;
         this.STAR_PHYSICS_RADIUS_SCALE = 0.8;
         this.STAR_SPRITE_SCALE = 0.4;
         this.SPAWN_SPEED_HORIZONTAL = 2.6;
@@ -51,6 +53,11 @@ class KorokoroReflect {
         this.OBSTACLE_VARIATION_MULTIPLIER = 7;
         this.OBSTACLE_VARIATION_SPAN = 11;
         this.OBSTACLE_VARIATION_CENTER = 5;
+        this.OBSTACLE_MIN_SPAWN_CLEARANCE = 54;
+        this.OBSTACLE_MIN_GOAL_CLEARANCE = 52;
+        this.OBSTACLE_ROUTE_BAND_BASE = 86;
+        this.OBSTACLE_ROUTE_BAND_MIN = 52;
+        this.OBSTACLE_MIN_SEPARATION = 32;
         this.DIFFICULTY_BASE_OBSTACLE_WIDTH = 94;
         this.DIFFICULTY_OBSTACLE_WIDTH_STEP = 3;
         this.DIFFICULTY_MIN_OBSTACLE_WIDTH = 56;
@@ -190,8 +197,7 @@ class KorokoroReflect {
                 goal: { x: 42, y: 338, r: 22 },
                 maxBlocks: 2,
                 obstacles: [
-                    { type: 'star', x: 166, y: 188, outerR: 24, innerR: 10, angle: 0.24 },
-                    { type: 'rect', x: 102, y: 140, w: 74, h: 14, angle: -0.32 }
+                    { type: 'rect', x: 166, y: 206, w: 84, h: 14, angle: 0.2 }
                 ]
             },
             {
@@ -227,15 +233,25 @@ class KorokoroReflect {
                 y: this._clampValue(template.goal.y - ((index + 2) % 4) * 6, 30, 398),
                 r: Math.max(this.MIN_GOAL_RADIUS, template.goal.r - Math.floor(level / 2))
             }, template.spawnDirection);
-            const obstacles = [
+            const stageMaxBlocks = stageNumber === 4
+                ? Math.max(3, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL))
+                : Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL));
+            const generatedObstacles = [
                 ...template.obstacles.map((obstacle, obstacleIndex) => (
                     this._createStageObstacleVariant(obstacle, index, obstacleIndex, level)
                 )),
                 ...this._buildDifficultyObstacles(level, index)
             ];
             if (stageNumber >= this.BUMPER_UNLOCK_STAGE) {
-                obstacles.push(this._buildBumperObstacle(index, level));
+                generatedObstacles.push(this._buildBumperObstacle(index, level, spawn, goal));
             }
+            const obstacles = this._balanceStageObstacles({
+                obstacles: generatedObstacles,
+                spawn,
+                goal,
+                stageNumber,
+                level
+            });
 
             return {
                 spawn,
@@ -244,7 +260,7 @@ class KorokoroReflect {
                     ? this.SPAWN_SPEED_HORIZONTAL
                     : this.SPAWN_SPEED_VERTICAL,
                 goal,
-                maxBlocks: Math.max(this.MIN_BLOCKS_PER_STAGE, template.maxBlocks - Math.floor(level / this.BLOCKS_DECREASE_INTERVAL)),
+                maxBlocks: stageMaxBlocks,
                 minRequiredBlocks: this.MIN_REQUIRED_BLOCKS,
                 availableTools,
                 obstacles
@@ -262,21 +278,136 @@ class KorokoroReflect {
         };
     }
 
-    _buildBumperObstacle(stageIndex, level) {
+    _buildBumperObstacle(stageIndex, level, spawn, goal) {
+        const ratioVariation = (((stageIndex % 5) - 2) / 2) * this.BUMPER_PATH_RATIO_VARIATION;
+        const progress = this._clampValue(this.BUMPER_PATH_RATIO_BASE + ratioVariation, 0.32, 0.78);
+        const baseX = spawn.x + ((goal.x - spawn.x) * progress);
+        const baseY = spawn.y + ((goal.y - spawn.y) * progress);
         return {
             type: 'bumper',
             x: this._clampValue(
-                this.BUMPER_BASE_X + ((stageIndex * this.BUMPER_X_VARIATION_STEP) % this.BUMPER_X_VARIATION_SPAN),
+                baseX + ((((stageIndex * this.BUMPER_X_VARIATION_STEP) % this.BUMPER_X_VARIATION_SPAN) - (this.BUMPER_X_VARIATION_SPAN / 2)) * 0.18),
                 36,
                 284
             ),
             y: this._clampValue(
-                this.BUMPER_BASE_Y + ((stageIndex * this.BUMPER_Y_VARIATION_STEP) % this.BUMPER_Y_VARIATION_SPAN),
+                baseY + ((((stageIndex * this.BUMPER_Y_VARIATION_STEP) % this.BUMPER_Y_VARIATION_SPAN) - (this.BUMPER_Y_VARIATION_SPAN / 2)) * 0.12),
                 78,
                 386
             ),
             r: Math.max(this.MIN_OBSTACLE_RADIUS + 2, 16 - Math.floor(level / 3))
         };
+    }
+
+    _balanceStageObstacles({ obstacles, spawn, goal, stageNumber, level }) {
+        if (!Array.isArray(obstacles) || obstacles.length === 0) return [];
+        const routeBand = this._clampValue(
+            this.OBSTACLE_ROUTE_BAND_BASE - (level * 4),
+            this.OBSTACLE_ROUTE_BAND_MIN,
+            this.OBSTACLE_ROUTE_BAND_BASE
+        );
+        const spawnClearance = this.OBSTACLE_MIN_SPAWN_CLEARANCE;
+        const goalClearance = this.OBSTACLE_MIN_GOAL_CLEARANCE;
+        const maxObstacles = this._getObstacleCapForStage(stageNumber);
+
+        const meaningful = obstacles
+            .filter((obstacle) => {
+                const point = { x: obstacle.x, y: obstacle.y };
+                const distanceFromSpawn = this._distanceBetweenPoints(point, spawn);
+                const distanceFromGoal = this._distanceBetweenPoints(point, goal);
+                const distanceToRoute = this._distancePointToSegment(point, spawn, goal);
+                const routeAllowance = obstacle.type === 'bumper' ? routeBand + 18 : routeBand;
+                return (
+                    distanceFromSpawn >= spawnClearance
+                    && distanceFromGoal >= goalClearance
+                    && distanceToRoute <= routeAllowance
+                );
+            });
+        if (stageNumber <= 12 && !meaningful.some((obstacle) => obstacle.type !== 'bumper')) {
+            const fallbackNonBumper = obstacles
+                .filter((obstacle) => obstacle.type !== 'bumper')
+                .sort((a, b) => this._obstacleScore(a, spawn, goal) - this._obstacleScore(b, spawn, goal))[0];
+            if (fallbackNonBumper) {
+                meaningful.push(fallbackNonBumper);
+            }
+        }
+        if (stageNumber >= this.BUMPER_UNLOCK_STAGE && !meaningful.some((obstacle) => obstacle.type === 'bumper')) {
+            meaningful.push(this._buildBumperObstacle(stageNumber - 1, level, spawn, goal));
+        }
+        meaningful.sort((a, b) => this._obstacleScore(a, spawn, goal) - this._obstacleScore(b, spawn, goal));
+
+        const selected = [];
+        let bumperAdded = false;
+        meaningful.forEach((obstacle) => {
+            if (selected.length >= maxObstacles) return;
+            const point = { x: obstacle.x, y: obstacle.y };
+            const tooClose = selected.some((picked) => this._distanceBetweenPoints(point, picked) < this.OBSTACLE_MIN_SEPARATION);
+            if (tooClose) return;
+            if (obstacle.type === 'bumper') {
+                if (bumperAdded) return;
+                bumperAdded = true;
+            }
+            selected.push(obstacle);
+        });
+
+        if (stageNumber >= this.BUMPER_UNLOCK_STAGE && !bumperAdded) {
+            const bumper = meaningful.find((obstacle) => obstacle.type === 'bumper');
+            if (bumper && selected.length < maxObstacles) {
+                selected.push(bumper);
+            }
+        }
+        if (stageNumber >= this.BUMPER_UNLOCK_STAGE && selected.length < maxObstacles) {
+            const nonBumper = meaningful.find((obstacle) => obstacle.type !== 'bumper' && !selected.includes(obstacle));
+            if (nonBumper) {
+                selected.push(nonBumper);
+            }
+        }
+
+        if (selected.length === 0) {
+            return obstacles.slice(0, Math.min(maxObstacles, 1));
+        }
+        return selected;
+    }
+
+    _obstacleScore(obstacle, spawn, goal) {
+        const point = { x: obstacle.x, y: obstacle.y };
+        const routeDistance = this._distancePointToSegment(point, spawn, goal);
+        const centerDistance = Math.abs(this._distanceBetweenPoints(point, spawn) - this._distanceBetweenPoints(point, goal));
+        const bumperBias = obstacle.type === 'bumper' ? 2 : 0;
+        return routeDistance + (centerDistance * 0.1) + bumperBias;
+    }
+
+    _getObstacleCapForStage(stageNumber) {
+        if (stageNumber <= 1) return 0;
+        if (stageNumber <= 4) return 1;
+        if (stageNumber <= 8) return 2;
+        if (stageNumber <= 20) return 3;
+        if (stageNumber <= 50) return 4;
+        return 5;
+    }
+
+    _distanceBetweenPoints(a, b) {
+        const dx = a.x - b.x;
+        const dy = a.y - b.y;
+        return Math.hypot(dx, dy);
+    }
+
+    _distancePointToSegment(point, segmentStart, segmentEnd) {
+        const segmentX = segmentEnd.x - segmentStart.x;
+        const segmentY = segmentEnd.y - segmentStart.y;
+        const segmentLengthSquared = (segmentX * segmentX) + (segmentY * segmentY);
+        if (!segmentLengthSquared) return this._distanceBetweenPoints(point, segmentStart);
+
+        const projection = (
+            ((point.x - segmentStart.x) * segmentX)
+            + ((point.y - segmentStart.y) * segmentY)
+        ) / segmentLengthSquared;
+        const t = this._clampValue(projection, 0, 1);
+        const closest = {
+            x: segmentStart.x + (segmentX * t),
+            y: segmentStart.y + (segmentY * t)
+        };
+        return this._distanceBetweenPoints(point, closest);
     }
 
     _buildStages(stageDefinitions) {
