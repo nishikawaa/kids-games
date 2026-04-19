@@ -696,8 +696,7 @@ class KorokoroReflect {
     _normalizeStageReachability(spawn, goal, spawnDirection) {
         const normalizedSpawn = { ...spawn };
         if (
-            !normalizedSpawn
-            || !goal
+            !goal
             || !Number.isFinite(normalizedSpawn.x)
             || !Number.isFinite(normalizedSpawn.y)
             || !Number.isFinite(goal.x)
@@ -717,6 +716,7 @@ class KorokoroReflect {
         const minStageY = this.STAGE_BOUNDARY_MARGIN;
         const maxStageY = this.STAGE_BASE_HEIGHT - this.STAGE_BOUNDARY_MARGIN;
         if (normalizedSpawn.y > maxReachableSpawnY) {
+            // _clampValue signature is (value, min, max).
             normalizedSpawn.y = this._clampValue(maxReachableSpawnY, minStageY, maxStageY);
         }
         return normalizedSpawn;
