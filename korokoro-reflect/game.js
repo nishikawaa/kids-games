@@ -111,6 +111,13 @@ class KorokoroReflect {
         // small tolerance so dragging slightly outside the frame feels like a natural delete gesture
         this.DRAG_DELETE_OUTSIDE_MARGIN = 6;
         this.CLEAR_OVERLAY_DELAY_MS = 650;
+        this.NON_CORE_ROUND_TO_RECT_SCALE = 0.95;
+        this.NON_CORE_ROUND_MIN_SIZE = 20;
+        this.NON_CORE_BUMPER_MIN_SIZE = 24;
+        this.NON_CORE_DEFAULT_RADIUS = 16;
+        this.NON_CORE_STANDARD_RESTITUTION = 0.9;
+        this.NON_CORE_BUMPER_FRICTION = 0.02;
+        this.NON_CORE_CIRCLE_FRICTION = 0.08;
 
         this.stageText = document.getElementById('stageText');
         this.stockText = document.getElementById('stockText');
@@ -1130,16 +1137,20 @@ class KorokoroReflect {
             if (!obstacle || typeof obstacle !== 'object') return obstacle;
             if (obstacle.type === 'circle' || obstacle.type === 'bumper') {
                 const radius = Number(obstacle.r);
-                const safeRadius = Number.isFinite(radius) ? Math.max(this.MIN_OBSTACLE_RADIUS, radius) : 16;
-                const size = Math.max(20, Math.round(safeRadius * 2));
+                const safeRadius = Number.isFinite(radius) ? Math.max(this.MIN_OBSTACLE_RADIUS, radius) : this.NON_CORE_DEFAULT_RADIUS;
+                const size = Math.max(this.NON_CORE_ROUND_MIN_SIZE, Math.round(safeRadius * 2));
                 const isBumper = obstacle.type === 'bumper';
                 return {
                     ...obstacle,
                     type: 'rect',
-                    w: isBumper ? Math.max(24, size) : Math.max(20, Math.round(size * 0.95)),
-                    h: isBumper ? Math.max(24, size) : Math.max(20, Math.round(size * 0.95)),
-                    restitution: isBumper ? this.BUMPER_RESTITUTION : 0.9,
-                    friction: isBumper ? 0.02 : 0.08,
+                    w: isBumper
+                        ? Math.max(this.NON_CORE_BUMPER_MIN_SIZE, size)
+                        : Math.max(this.NON_CORE_ROUND_MIN_SIZE, Math.round(size * this.NON_CORE_ROUND_TO_RECT_SCALE)),
+                    h: isBumper
+                        ? Math.max(this.NON_CORE_BUMPER_MIN_SIZE, size)
+                        : Math.max(this.NON_CORE_ROUND_MIN_SIZE, Math.round(size * this.NON_CORE_ROUND_TO_RECT_SCALE)),
+                    restitution: isBumper ? this.BUMPER_RESTITUTION : this.NON_CORE_STANDARD_RESTITUTION,
+                    friction: isBumper ? this.NON_CORE_BUMPER_FRICTION : this.NON_CORE_CIRCLE_FRICTION,
                     fillStyle: isBumper ? '#ec4899' : '#0ea5e9',
                     strokeStyle: isBumper ? '#9d174d' : undefined,
                     lineWidth: isBumper ? 3 : 1
