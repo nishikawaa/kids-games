@@ -215,13 +215,21 @@ class KorokoroReflect {
 
     _showHelpIfFirstTime() {
         const key = 'korokoroReflectHelpSeenV1';
-        if (!localStorage.getItem(key)) {
+        let seen = false;
+        try {
+            seen = localStorage.getItem(key) === '1';
+        } catch (_error) {
+            seen = false;
+        }
+        if (!seen) {
             this._toggleModal(this.helpModal, true);
         }
     }
 
     _closeHelp() {
-        localStorage.setItem('korokoroReflectHelpSeenV1', '1');
+        try {
+            localStorage.setItem('korokoroReflectHelpSeenV1', '1');
+        } catch (_error) {}
         this._toggleModal(this.helpModal, false);
     }
 
@@ -440,9 +448,9 @@ class KorokoroReflect {
     _createStarVertices(outerRadius, innerRadius, points) {
         const vertices = [];
         const step = Math.PI / points;
-        for (let vertexIndex = 0; vertexIndex < points * 2; vertexIndex += 1) {
-            const radius = vertexIndex % 2 === 0 ? outerRadius : innerRadius;
-            const angle = vertexIndex * step - Math.PI / 2;
+        for (let idx = 0; idx < points * 2; idx += 1) {
+            const radius = idx % 2 === 0 ? outerRadius : innerRadius;
+            const angle = idx * step - Math.PI / 2;
             vertices.push({
                 x: Math.cos(angle) * radius,
                 y: Math.sin(angle) * radius
