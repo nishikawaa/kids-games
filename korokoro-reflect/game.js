@@ -1,5 +1,10 @@
 class KorokoroReflect {
     constructor() {
+        this.ROTATION_INCREMENT = Math.PI / 12;
+        this.STUCK_MIN_SPEED = 0.08;
+        this.STUCK_CHECK_HEIGHT_RATIO = 0.68;
+        this.STUCK_MAX_FRAMES = 140;
+
         this.stageText = document.getElementById('stageText');
         this.starText = document.getElementById('starText');
         this.stateText = document.getElementById('stateText');
@@ -49,7 +54,7 @@ class KorokoroReflect {
                 goal: { x: 66, y: 390, r: 24 },
                 maxBlocks: 2,
                 obstacles: [
-                    { type: 'rect', x: 160, y: 210, w: 110, h: 16, angle: -0.2 }
+                    { type: 'rect', x: 160, y: 210, w: 110, h: 16, angle: -0.2 } // radians
                 ]
             },
             {
@@ -269,7 +274,7 @@ class KorokoroReflect {
 
     _rotateSelected() {
         if (this.isStarted || !this.selectedBlock) return;
-        this.Matter.Body.rotate(this.selectedBlock, Math.PI / 12);
+        this.Matter.Body.rotate(this.selectedBlock, this.ROTATION_INCREMENT);
     }
 
     _deleteSelected() {
@@ -392,9 +397,9 @@ class KorokoroReflect {
 
             if (y > this.height + 26) {
                 this._onFail('ボールが落ちちゃった！リトライしよう。');
-            } else if (speed < 0.08 && y > this.height * 0.68) {
+            } else if (speed < this.STUCK_MIN_SPEED && y > this.height * this.STUCK_CHECK_HEIGHT_RATIO) {
                 this.stuckFrames += 1;
-                if (this.stuckFrames > 140) {
+                if (this.stuckFrames > this.STUCK_MAX_FRAMES) {
                     this._onFail('ボールが止まったよ。配置を変えてみよう！');
                 }
             } else {
