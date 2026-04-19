@@ -30,6 +30,7 @@ class KorokoroReflect {
         this.MAX_EXTRA_OBSTACLES = 3;
         this.MIN_BLOCKS_PER_STAGE = 1;
         this.REACHABLE_GOAL_MIN_DROP = 52;
+        this.HORIZONTAL_SPAWN_DROP_ADJUSTMENT = 16;
         this.MIN_GOAL_RADIUS = 14;
         this.MIN_OBSTACLE_RADIUS = 9;
         this.MIN_OBSTACLE_INNER_RADIUS = 4;
@@ -248,7 +249,7 @@ class KorokoroReflect {
 
     _ensureReachableGoal(spawn, goal, spawnDirection) {
         const minDrop = ['left', 'right'].includes(spawnDirection)
-            ? this.REACHABLE_GOAL_MIN_DROP - 16
+            ? this.REACHABLE_GOAL_MIN_DROP - this.HORIZONTAL_SPAWN_DROP_ADJUSTMENT
             : this.REACHABLE_GOAL_MIN_DROP;
         return {
             ...goal,
