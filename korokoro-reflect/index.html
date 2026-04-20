@@ -17,37 +17,88 @@
 <body>
     <div class="game-container">
         <header class="game-header">
+            <button id="resetBtn" class="secondary header-icon-btn header-reset" aria-label="リセット">
+                <span class="reset-icon" aria-hidden="true">↻</span>
+            </button>
             <h1>🧩 ころころリフレクト</h1>
             <div class="status-row">
-                <span id="stageText">ステージ 1 / 3</span>
-                <span id="starText">⭐ 0</span>
-                <span id="stateText">配置中</span>
+                <span id="stageText">ステージ 1 / 100</span>
             </div>
-            <div class="header-buttons">
-                <button id="resetBtn" class="secondary">リセット</button>
-                <button id="pauseBtn" class="secondary" disabled>一時停止</button>
+            <div class="header-menu">
+                <button id="menuBtn" class="secondary menu-toggle" aria-label="メニュー" aria-expanded="false">⚙️</button>
+                <div id="menuPanel" class="menu-panel hidden" aria-hidden="true">
+                    <button id="stageListBtn" class="secondary menu-item">ステージ一覧</button>
+                    <button id="helpBtn" class="secondary menu-item">あそび方</button>
+                </div>
             </div>
         </header>
 
         <main>
-            <div id="playArea" class="play-area"></div>
-            <p id="messageText" class="message">下の「四角」を選んで、プレイエリアをタップして置こう！</p>
+            <div id="playArea" class="play-area">
+                <div id="fxBadge" class="fx-badge hidden" role="status" aria-live="polite" aria-atomic="true"></div>
+            </div>
         </main>
 
         <footer class="toolbox">
-            <div class="tool-row">
-                <button id="selectRectBtn" class="tool-btn active">四角</button>
-                <span id="stockText">のこり: 1</span>
+            <div class="tool-row tool-select-row">
+                <button id="selectRectBtn" class="tool-btn shape-btn active" aria-label="しかく">
+                    <span class="tool-icon rect-icon" aria-hidden="true"></span>
+                </button>
+                <button id="selectStarBtn" class="tool-btn shape-btn" aria-label="ほし">
+                    <span class="tool-icon star-icon" aria-hidden="true"></span>
+                </button>
             </div>
-            <div class="tool-row">
-                <button id="rotateBtn" class="tool-btn">回転 +15°</button>
-                <button id="deleteBtn" class="tool-btn">削除</button>
+            <div class="tool-row start-control-row">
+                <button id="startBtn" class="primary start-control-btn">スタート</button>
             </div>
-            <div class="tool-row">
-                <button id="startBtn" class="primary">スタート</button>
-                <button id="nextBtn" class="primary" disabled>つぎのステージ</button>
+            <div class="tool-row stock-row">
+                <div
+                    id="stockMeter"
+                    class="stock-meter"
+                    role="progressbar"
+                    aria-label="のこりブロック"
+                    aria-valuemin="0"
+                    aria-valuemax="1"
+                    aria-valuenow="1"
+                >
+                    <span id="stockBar" class="stock-meter-fill"></span>
+                </div>
+                <span id="stockText" class="sr-only">のこり: 1</span>
             </div>
+            <button id="nextBtn" class="primary legacy-next-btn" disabled>つぎのステージ</button>
         </footer>
+
+        <section id="stageSelectModal" class="overlay hidden" aria-hidden="true">
+            <div class="overlay-card">
+                <h2>ステージ一覧</h2>
+                <div id="stageList" class="stage-list"></div>
+                <button id="closeStageListBtn" class="secondary">閉じる</button>
+            </div>
+        </section>
+
+        <section id="helpModal" class="overlay hidden" aria-hidden="true">
+            <div class="overlay-card">
+                <h2>あそび方</h2>
+                <ol class="help-list">
+                    <li>下の形アイコンを指でドラッグして、プレイエリアに置きます。</li>
+                    <li>置いたブロックはタップで回転、ドラッグで動かせます。</li>
+                    <li>置いたブロックを画面外へドラッグすると削除できます。</li>
+                    <li>赤い輪から（上や横から）ボールが出て、緑の円に入るとクリアです。</li>
+                </ol>
+                <button id="closeHelpBtn" class="primary">OK</button>
+            </div>
+        </section>
+
+        <section id="clearModal" class="overlay clear-overlay hidden" aria-hidden="true">
+            <div class="overlay-card clear-card">
+                <h2>🎉 ステージクリア！</h2>
+                <p>つぎへすすむ？</p>
+                <div class="clear-actions">
+                    <button id="clearNextBtn" class="primary">つぎのステージ</button>
+                    <button id="clearStageListBtn" class="secondary">ステージ一覧</button>
+                </div>
+            </div>
+        </section>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/matter-js@0.20.0/build/matter.min.js"></script>
